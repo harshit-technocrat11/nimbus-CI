@@ -1,5 +1,5 @@
 {
-  "name": "flashbuild_CI",
+  "name": "nimbus_CI",
   "private": true,
   "scripts": {
     "build": "turbo run build",
