@@ -11,3 +11,159 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum TriggerType {
+  MANUAL
+}
+
+enum JobLogStream {
+  STDOUT
+  STDERR
+}
+
+enum RunnerStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+  DRAINING
+}
+
+
+model Repository {
+  id            String   @id @default(uuid()) @db.Uuid
+
+  name          String
+  owner         String
+  url           String   @unique
+  defaultBranch String   @default("main")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  ciConfig      CiConfig?
+  jobs          Job[]
+
+  @@index([owner])
+}
+
+
+model CiConfig {
+  id            String   @id @default(uuid()) @db.Uuid
+
+  repositoryId  String   @unique @db.Uuid
+
+  configVersion Int      @default(1)
+
+  // Example:
+  //
+  // {
+  //   "steps": [
+  //     "npm install",
+  //     "npm test",
+  //     "npm run build"
+  //   ]
+  // }
+  steps         Json
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  repository    Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Job {
+  id            String      @id @default(uuid()) @db.Uuid
+
+  repositoryId  String      @db.Uuid
+
+  branch        String
+  commitSha     String?
+
+  status        JobStatus   @default(QUEUED)
+  triggerType   TriggerType @default(MANUAL)
+
+  runnerId      String?     @db.Uuid
+
+  queuedAt      DateTime    @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  exitCode      Int?
+  errorMessage  String?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  repository    Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  runner        Runner?     @relation(fields: [runnerId], references: [id], onDelete: SetNull)
+  logs          JobLog[]
+
+  @@index([repositoryId])
+  @@index([runnerId])
+  @@index([status])
+  @@index([queuedAt])
+}
+
+
+// ─────────────────────────────────────────────
+// JOB LOGS
+// ─────────────────────────────────────────────
+
+model JobLog {
+  id          String        @id @default(uuid()) @db.Uuid
+
+  jobId       String        @db.Uuid
+
+  sequence    Int
+  stream      JobLogStream
+  message     String
+
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, sequence])
+  @@index([jobId])
+}
+
+
+// ─────────────────────────────────────────────
+// RUNNERS
+// ─────────────────────────────────────────────
+
+model Runner {
+  id             String        @id @default(uuid()) @db.Uuid
+
+  name           String        @unique
+
+  status         RunnerStatus  @default(OFFLINE)
+
+  capacity       Int           @default(1)
+  activeJobs     Int           @default(0)
+
+  lastHeartbeat  DateTime?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  jobs           Job[]
+
+  @@index([status])
+  @@index([lastHeartbeat])
+}
