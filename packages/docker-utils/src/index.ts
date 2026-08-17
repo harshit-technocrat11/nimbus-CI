@@ -1,3 +1,8 @@
 export { docker } from "./client";
-export { executeCommand } from "./executor";
+export { executeJob } from "./executor";
 
+export type {
+    ExecuteJobOptions,
+    JobExecutionResult,
+    StepResult,
+} from "./executor";

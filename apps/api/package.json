@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nimbus-ci/docker-utils": "workspace:^",
     "@nimbus-ci/queue": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/dockerode": "^4.0.1",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.3",
     "@types/ws": "^8.18.1",

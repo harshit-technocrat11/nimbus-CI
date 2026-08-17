@@ -13,6 +13,7 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@nimbus-ci/docker-utils": "workspace:^",
     "@nimbus-ci/queue": "workspace:^",
     "bullmq": "^6.1.2",
     "ioredis": "^6.0.0"

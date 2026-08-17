@@ -1,44 +1,95 @@
 import { docker } from "./client";
 
-export async function executeCommand(image: string, command: string) {
-  console.log(`Using image: ${image}`);
-  console.log(`Executing: ${command}`);
+export type ExecuteJobOptions = {
+  image: string;
+  steps: string[];
+};
+
+export type StepResult = {
+  step: string;
+  exitCode: number;
+};
+
+export type JobExecutionResult = {
+  success: boolean;
+  steps: StepResult[];
+};
+
+export async function executeJob({
+  image,
+  steps,
+}: ExecuteJobOptions): Promise<JobExecutionResult> {
+  console.log(`Starting container with image: ${image}`);
 
   const container = await docker.createContainer({
     Image: image,
-    Cmd: ["sh", "-c", command],
+    Cmd: ["tail", "-f", "/dev/null"],
     Tty: false,
+    OpenStdin: false,
   });
+
+  const results: StepResult[] = [];
 
   try {
     await container.start();
 
-    const stream = await container.logs({
-      stdout: true,
-      stderr: true,
-      follow: true,
-    });
+    for (const [index, step] of steps.entries()) {
+      console.log(`\n▶️ Step ${index + 1}: ${step}`);
 
-    return new Promise<void>((resolve, reject) => {
+      const exec = await container.exec({
+        Cmd: ["sh", "-c", step],
+        AttachStdout: true,
+        AttachStderr: true,
+      });
+
+      const stream = await exec.start({
+        hijack: true,
+        stdin: false,
+      });
+
       stream.on("data", (chunk: Buffer) => {
         process.stdout.write(chunk);
       });
 
-      stream.on("end", async () => {
-        try {
-          await container.remove();
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
+      await new Promise<void>((resolve, reject) => {
+        stream.on("end", resolve);
+        stream.on("error", reject);
       });
-      stream.on("error", reject);
-    });
-  } catch (error) {
-    try {
-      await container.remove({ force: true });
-    } catch {}
 
-    throw error;
+      const inspection = await exec.inspect();
+
+      const exitCode = inspection.ExitCode ?? 1;
+
+      results.push({
+        step,
+        exitCode,
+      });
+
+      if (exitCode !== 0) {
+        console.log(`❌ Step failed with exit code ${exitCode}`);
+
+        return {
+          success: false,
+          steps: results,
+        };
+      }
+
+      console.log(`✅ Step completed`);
+    }
+
+    return {
+      success: true,
+      steps: results,
+    };
+  } finally {
+    console.log("\n Removing container...");
+
+    try {
+      await container.remove({
+        force: true,
+      });
+    } catch (error) {
+      console.error("Failed to remove container:", error);
+    }
   }
 }

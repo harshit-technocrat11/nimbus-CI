@@ -1,23 +1,37 @@
-import { ConnectionClosedError, Worker } from "bullmq"
-import { redisConnection, CI_QUEUE_NAME } from "@nimbus-ci/queue"
+import { ConnectionClosedError, Worker } from "bullmq";
+import { redisConnection, CI_QUEUE_NAME } from "@nimbus-ci/queue";
+import { executeJob } from "@nimbus-ci/docker-utils";
 
 const worker = new Worker(
-    CI_QUEUE_NAME, 
-    async(job) => {
-        console.log(` Processing job ${job.id}`);
-        console.log("Job data:", job.data);
+  CI_QUEUE_NAME,
+  async (job) => {
+    console.log(` Processing job ${job.id}`);
+    console.log("Job data:", job.data);
 
-         // Pretend we're doing some work
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+    // executing the docker container
+    const { image, steps } = job.data;
 
-        console.log(`✅ Job ${job.id} completed`);
-        return { result: "Job completed successfully" };
-        
-    },
-    {
-        connection: redisConnection
+    if (!image || !steps || !Array.isArray(steps)) {
+      throw new Error("Job must contain 'image' and 'steps'");
     }
-)
+
+    const result = await executeJob({
+      image,
+      steps,
+    });
+
+    if (!result.success) {
+      throw new Error("CI job failed");
+    }
+
+    console.log(`🎉 Job ${job.id} completed successfully`);
+
+    return result;
+  },
+  {
+    connection: redisConnection,
+  },
+);
 
 worker.on("completed", (job) => {
   console.log(` Job ${job.id} completed`);
@@ -28,6 +42,4 @@ worker.on("failed", (job, error) => {
   console.error(error);
 });
 
-
 console.log(" Worker is running...");
-

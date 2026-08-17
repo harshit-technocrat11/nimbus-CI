@@ -2,14 +2,21 @@ import { ciQueue, redisConnection } from "@nimbus-ci/queue"
 
 async function main() {
     const job = await ciQueue.add("run-ci", {
-        repository: "test-repo101",
-        branch: "main",
-        commitSha: "abc1234z"
+        image: 'node:22',
+        // command: 'echo "Hello from the CI worker" && node --version && sleep 2 && echo "This is a test"'
+
+        // command: 'echo "Starting tests..." && exit 1',
+
+        steps : [
+            'echo "Hello from nimbus CI"',
+            "node --version",
+            'echo "Running tests ..."'
+        ]
     });
     console.log(`✅ Job enqueued with ID: ${job.id}`);
 
     await ciQueue.close();
-    await redisConnection.quit();
+
 }
 
 main().catch((err) => {
