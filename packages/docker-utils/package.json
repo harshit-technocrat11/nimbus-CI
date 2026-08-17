@@ -1,0 +1,21 @@
+{
+  "name": "@nimbus-ci/docker-utils",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "./src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx ./src/test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dockerode": "^5.0.1",
+    "tsx": "^4.23.12"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^4.0.1"
+  }
+}
