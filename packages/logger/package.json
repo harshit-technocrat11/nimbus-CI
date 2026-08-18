@@ -1,0 +1,28 @@
+{
+  "name": "@nimbus-ci/logger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Logger package for Nimbus CI",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "morgan": "^1.11.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^22.15.3",
+    "typescript": "^7.0.2"
+  }
+}

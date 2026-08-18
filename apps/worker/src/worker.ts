@@ -1,12 +1,13 @@
 import { ConnectionClosedError, Worker } from "bullmq";
 import { redisConnection, CI_QUEUE_NAME } from "@nimbus-ci/queue";
 import { executeJob } from "@nimbus-ci/docker-utils";
+import { logger } from "@nimbus-ci/logger";
 
 const worker = new Worker(
   CI_QUEUE_NAME,
   async (job) => {
-    console.log(` Processing job ${job.id}`);
-    console.log("Job data:", job.data);
+    logger.info(` Processing job ${job.id}`);
+    logger.info(`Job data: ${JSON.stringify(job.data)}`);
 
     // executing the docker container
     const { image, steps } = job.data;
@@ -24,7 +25,7 @@ const worker = new Worker(
       throw new Error("CI job failed");
     }
 
-    console.log(`🎉 Job ${job.id} completed successfully`);
+    logger.info(`Job ${job.id} completed successfully`);
 
     return result;
   },
@@ -34,12 +35,11 @@ const worker = new Worker(
 );
 
 worker.on("completed", (job) => {
-  console.log(` Job ${job.id} completed`);
+  logger.info(` Job ${job.id} completed`);
 });
 
 worker.on("failed", (job, error) => {
-  console.error(`❌ Job ${job?.id} failed`);
-  console.error(error);
+  logger.error(`❌ Job ${job?.id} failed: ${error.message}`, { error });
 });
 
-console.log(" Worker is running...");
+logger.info(" Worker is running...");

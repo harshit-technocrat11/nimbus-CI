@@ -15,6 +15,7 @@
   "dependencies": {
     "@nimbus-ci/db": "workspace:*",
     "@nimbus-ci/docker-utils": "workspace:^",
+    "@nimbus-ci/logger": "workspace:*",
     "@nimbus-ci/queue": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
