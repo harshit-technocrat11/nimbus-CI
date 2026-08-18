@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import {
   createRepository,
   getRepositories,
   getRepositoryById,
 } from "../services/repository.service.js";
-
+import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
 
 export const createRepositoryController = async (
@@ -21,7 +21,7 @@ export const createRepositoryController = async (
     logger.error("Failed to create repository", { error });
 
     return res.status(500).json({
-      message: "Failed to create repository",
+      message: error instanceof Error ? error.message : "Failed to create repository",
     });
   }
 };
@@ -48,7 +48,12 @@ export const getRepositoryController = async (
   res: Response
 ) => {
   try {
-    const repository = await getRepositoryById(req.params.id);
+    const id = getParam(req.params.id);
+    if (!id) {
+      return res.status(400).json({ message: "Repository ID is required" });
+    }
+
+    const repository = await getRepositoryById(id);
 
     if (!repository) {
       return res.status(404).json({

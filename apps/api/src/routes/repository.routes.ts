@@ -1,11 +1,9 @@
 import { Router } from "express";
-
 import {
   createRepositoryController,
   getRepositoriesController,
   getRepositoryController,
 } from "../controllers/repository.controller.js";
-
 import { validateBody } from "../middlewares/validate.js";
 import { createRepositorySchema } from "../schemas/repository.schema.js";
 
@@ -18,7 +16,6 @@ router.post(
 );
 
 router.get("/", getRepositoriesController);
-
 router.get("/:id", getRepositoryController);
 
 export default router;

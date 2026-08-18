@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,6 +7,17 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum WorkflowRunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
 
 enum JobStatus {
   QUEUED
@@ -35,132 +43,188 @@ enum RunnerStatus {
   DRAINING
 }
 
+// ─────────────────────────────────────────────
+// REPOSITORY
+// ─────────────────────────────────────────────
 
 model Repository {
-  id            String   @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
   name          String
   owner         String
-  url           String   @unique
-  defaultBranch String   @default("main")
+  url           String @unique
+  defaultBranch String @default("main")
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  ciConfig      CiConfig?
-  jobs          Job[]
+  workflows Workflow[]
 
   @@index([owner])
 }
 
+// ─────────────────────────────────────────────
+// WORKFLOW
+// ─────────────────────────────────────────────
 
-model CiConfig {
-  id            String   @id @default(uuid()) @db.Uuid
+model Workflow {
+  id String @id @default(uuid()) @db.Uuid
 
-  repositoryId  String   @unique @db.Uuid
+  repositoryId String @db.Uuid
 
-  configVersion Int      @default(1)
+  name          String
+  configVersion Int    @default(1)
 
+  // Workflow definition.
+  //
   // Example:
   //
   // {
-  //   "steps": [
-  //     "npm install",
-  //     "npm test",
-  //     "npm run build"
+  //   "jobs": [
+  //     {
+  //       "name": "build",
+  //       "commands": [
+  //         "npm install",
+  //         "npm test",
+  //         "npm run build"
+  //       ]
+  //     }
   //   ]
   // }
-  steps         Json
+  definition Json
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  repository    Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-}
-
-
-
-model Job {
-  id            String      @id @default(uuid()) @db.Uuid
-
-  repositoryId  String      @db.Uuid
-
-  branch        String
-  commitSha     String?
-
-  status        JobStatus   @default(QUEUED)
-  triggerType   TriggerType @default(MANUAL)
-
-  runnerId      String?     @db.Uuid
-
-  queuedAt      DateTime    @default(now())
-  startedAt     DateTime?
-  completedAt   DateTime?
-
-  exitCode      Int?
-  errorMessage  String?
-
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  repository    Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  runner        Runner?     @relation(fields: [runnerId], references: [id], onDelete: SetNull)
-  logs          JobLog[]
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  runs WorkflowRun[]
 
   @@index([repositoryId])
+}
+
+// ─────────────────────────────────────────────
+// WORKFLOW RUN
+// ─────────────────────────────────────────────
+
+model WorkflowRun {
+  id         String @id @default(uuid()) @db.Uuid
+  workflowId String @db.Uuid
+
+  branch    String
+  commitSha String?
+
+  status      WorkflowRunStatus @default(QUEUED)
+  triggerType TriggerType       @default(MANUAL)
+
+  queuedAt    DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  jobs     Job[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([queuedAt])
+  @@index([commitSha])
+}
+
+// ─────────────────────────────────────────────
+// JOB
+// ─────────────────────────────────────────────
+
+model Job {
+  id String @id @default(uuid()) @db.Uuid
+
+  workflowRunId String @db.Uuid
+
+  name String
+
+  // Commands that this job will execute.
+  //
+  // Example:
+  //
+  // [
+  //   "npm install",
+  //   "npm test"
+  // ]
+  commands Json
+
+  status JobStatus @default(QUEUED)
+
+  runnerId String? @db.Uuid
+
+  queuedAt    DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  exitCode     Int?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  runner      Runner?     @relation(fields: [runnerId], references: [id], onDelete: SetNull)
+  logs        JobLog[]
+
+  @@index([workflowRunId])
   @@index([runnerId])
   @@index([status])
   @@index([queuedAt])
 }
 
-
 // ─────────────────────────────────────────────
-// JOB LOGS
+// JOB LOG
 // ─────────────────────────────────────────────
 
 model JobLog {
-  id          String        @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  jobId       String        @db.Uuid
+  jobId String @db.Uuid
 
-  sequence    Int
-  stream      JobLogStream
-  message     String
+  sequence Int
+  stream   JobLogStream
+  message  String
 
-  createdAt   DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, sequence])
   @@index([jobId])
 }
 
-
 // ─────────────────────────────────────────────
-// RUNNERS
+// RUNNER
 // ─────────────────────────────────────────────
 
 model Runner {
-  id             String        @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  name           String        @unique
+  name String @unique
 
-  status         RunnerStatus  @default(OFFLINE)
+  status RunnerStatus @default(OFFLINE)
 
-  capacity       Int           @default(1)
-  activeJobs     Int           @default(0)
+  capacity   Int @default(1)
+  activeJobs Int @default(0)
 
-  lastHeartbeat  DateTime?
+  lastHeartbeat DateTime?
 
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  jobs           Job[]
+  jobs Job[]
 
   @@index([status])
   @@index([lastHeartbeat])

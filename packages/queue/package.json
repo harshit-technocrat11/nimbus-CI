@@ -14,5 +14,10 @@
   "dependencies": {
     "bullmq": "^6.1.2",
     "ioredis": "^6.0.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "typescript": "^7.0.2"
   }
 }

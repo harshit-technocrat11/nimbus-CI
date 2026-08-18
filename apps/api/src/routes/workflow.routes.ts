@@ -1,15 +1,13 @@
 import { Router } from "express";
-
 import {
   createWorkflowController,
   getWorkflowController,
   getWorkflowsController,
 } from "../controllers/workflow.controller.js";
-
-import { validateBody } from "../middleware/validate.js";
+import { validateBody } from "../middlewares/validate.js";
 import { createWorkflowSchema } from "../schemas/workflow.schema.js";
 
-const router = Router();
+const router: Router = Router();
 
 router.post(
   "/repositories/:repositoryId/workflows",
