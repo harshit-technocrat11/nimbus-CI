@@ -3,6 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import { httpLogger, logger } from "@nimbus-ci/logger";
 
+import repositoryRoutes from "./routes/repository.routes";
+import workflowRoutes from "./routes/workflow.routes";
+import workflowRunRoutes from "./routes/workflow-run.routes";
+
 const app: express.Express = express();
 
 app.use(helmet());
@@ -14,6 +18,10 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use("/repositories", repositoryRoutes);
+app.use("/api", workflowRoutes);
+app.use("/api", workflowRunRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
