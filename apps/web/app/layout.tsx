@@ -1,19 +1,19 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import ThemeRegistry from '../theme/ThemeRegistry';
 import { AppShell } from '../components/layout/AppShell';
 
-const geistSans = localFont({
-  src: './fonts/GeistVF.woff',
+const sansFont = Inter({
+  subsets: ['latin'],
+  display: 'swap',
   variable: '--font-geist-sans',
-  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
-const geistMono = localFont({
-  src: './fonts/GeistMonoVF.woff',
+const monoFont = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
   variable: '--font-geist-mono',
-  fallback: ['JetBrains Mono', 'Fira Code', 'monospace'],
 });
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${sansFont.variable} ${monoFont.variable}`}>
       <body>
         <ThemeRegistry>
           <AppShell>{children}</AppShell>
