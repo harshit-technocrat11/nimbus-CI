@@ -1,0 +1,33 @@
+name: Nimbus CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build & Validate
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm and Node
+        uses: pnpm/setup@v2
+        with:
+          version: 11
+          runtime: node@22
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build

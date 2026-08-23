@@ -171,6 +171,9 @@ importers:
       prisma:
         specifier: ^7.9.1
         version: 7.9.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@7.0.2)
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -254,6 +257,16 @@ importers:
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.15.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
 
   packages/typescript-config: {}
 
