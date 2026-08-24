@@ -102,6 +102,46 @@ async function main() {
     workflowRunId: run.id,
     jobId: job.id,
   });
+
+    // 1. Create/find the repository
+  const repository2 = await prisma.repository.upsert({
+    where: {
+      url: "https://github.com/harshit-technocrat11/test-ci.git",
+    },
+    update: {
+      name: "test-ci",
+      owner: "harshit-technocrat11",
+      defaultBranch: "main",
+    },
+    create: {
+      name: "test-ci",
+      owner: "harshit-technocrat11",
+      url: "https://github.com/harshit-technocrat11/test-ci.git",
+      defaultBranch: "main",
+    },
+  });
+
+  // 2. Create/find a workflow for this repository
+  const workflow2 = await prisma.workflow.create({
+    data: {
+      name: "test-workflow",
+      repositoryId: repository2.id,
+
+      definition: [
+        {
+          name: "build",
+          commands: [
+            "echo 'Hello from Nimbus CI'",
+            "echo 'Running CI job'",
+            "node --version",
+          ],
+        },
+      ],
+    },
+  });
+
+  console.log("Repository seeded:", repository2.id);
+  console.log("Workflow seeded:", workflow2.id);
 }
 
 main()
