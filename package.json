@@ -20,6 +20,18 @@
   "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "cpu-features",
+      "esbuild",
+      "msgpackr-extract",
+      "ngrok",
+      "prisma",
+      "protobufjs",
+      "ssh2"
+    ]
   }
 }
 

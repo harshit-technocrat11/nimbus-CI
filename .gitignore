@@ -44,3 +44,5 @@ pnpm-debug.log*
 agent-context/
 .gemini
 gemini.md
+
+PROJECT_CONTEXT.md

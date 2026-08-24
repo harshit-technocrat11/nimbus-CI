@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { httpLogger, logger } from "@nimbus-ci/logger";
+import githubRoutes from "./routes/github.routes.js";
 
 import repositoryRoutes from "./routes/repository.routes.js";
 import workflowRoutes from "./routes/workflow.routes.js";
@@ -36,15 +37,8 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.post("/webhooks/github", async (req, res) => {
-  console.log("GitHub webhook received");
-  console.log("Event:", req.headers["x-github-event"]);
-  console.log("Payload:", req.body);
+app.use(githubRoutes);
 
-  res.status(200).json({
-    received: true,
-  });
-});
 
 app.use(errorHandler);
 

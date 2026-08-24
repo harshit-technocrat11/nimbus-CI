@@ -6,7 +6,7 @@ allowBuilds:
   cpu-features: true
   esbuild: true
   msgpackr-extract: true
-  ngrok: set this to true or false
+  ngrok: true
   prisma: true
   protobufjs: true
   ssh2: true

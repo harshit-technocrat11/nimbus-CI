@@ -20,9 +20,16 @@ export const createWorkflowRun = async (
     throw new Error("Workflow not found");
   }
 
-  const definition = (workflow.definition ?? []) as Array<{
+  const rawDefinition = workflow.definition;
+  const definition = (
+    Array.isArray(rawDefinition)
+      ? rawDefinition
+      : (rawDefinition as any)?.jobs ?? []
+  ) as Array<{
     name: string;
-    commands: string[];
+    image?: string;
+    commands?: string[];
+    steps?: string[];
   }>;
 
   const branch = input?.branch || workflow.repository.defaultBranch || "main";
@@ -39,11 +46,14 @@ export const createWorkflowRun = async (
     });
 
     for (const job of definition) {
+      const steps = job.steps ?? job.commands ?? [];
+      const image = job.image ?? "node:22";
+
       const createdJob = await tx.job.create({
         data: {
           workflowRunId: newRun.id,
           name: job.name,
-          commands: job.commands,
+          commands: steps,
           status: "QUEUED",
         },
       });
@@ -56,7 +66,9 @@ export const createWorkflowRun = async (
           repoUrl: workflow.repository.url,
           commitSha: commitSha ?? "HEAD",
           branch,
-          commands: job.commands,
+          image,
+          steps,
+          commands: steps,
         });
       } catch (err) {
         logger.error("Failed to enqueue job to ciQueue", {

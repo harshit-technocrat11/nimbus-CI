@@ -10,7 +10,8 @@ const worker = new Worker(
     logger.info(`Job data: ${JSON.stringify(job.data)}`);
 
     // executing the docker container
-    const { image, steps } = job.data;
+    const image = job.data.image || "node:22";
+    const steps = job.data.steps || job.data.commands;
 
     if (!image || !steps || !Array.isArray(steps)) {
       throw new Error("Job must contain 'image' and 'steps'");
