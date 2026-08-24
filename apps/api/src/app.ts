@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: true,
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -33,6 +33,16 @@ app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
     service: "nimbus-api",
+  });
+});
+
+app.post("/webhooks/github", async (req, res) => {
+  console.log("GitHub webhook received");
+  console.log("Event:", req.headers["x-github-event"]);
+  console.log("Payload:", req.body);
+
+  res.status(200).json({
+    received: true,
   });
 });
 
