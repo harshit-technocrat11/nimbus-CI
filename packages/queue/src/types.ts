@@ -8,7 +8,5 @@ export interface ExecuteJobPayload {
   name: string;
   image: string;
 
-  steps: {
-    command: string;
-  }[];
+  steps: string[];
 }

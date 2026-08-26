@@ -3,7 +3,7 @@ import {
   createRepository,
   getRepositories,
   getRepositoryById,
-} from "../services/repository.service.js";
+} from "../services/repository/repository.service.js";
 import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
 

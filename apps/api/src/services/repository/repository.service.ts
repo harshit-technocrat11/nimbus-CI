@@ -1,5 +1,5 @@
 import { prisma } from "@nimbus-ci/db";
-import type { CreateRepositoryInput } from "../schemas/repository.schema.js";
+import type { CreateRepositoryInput } from "../../schemas/repository.schema.js";
 
 export const createRepository = async (data: CreateRepositoryInput) => {
   const repoUrl = data.url ?? data.githubUrl!;
@@ -52,6 +52,24 @@ export const getRepositories = async () => {
 export const getRepositoryById = async (id: string) => {
   return prisma.repository.findUnique({
     where: { id },
+    include: {
+      workflows: {
+        include: {
+          runs: {
+            take: 5,
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+export const getRepositoryByUrl = async (url: string) => {
+  return prisma.repository.findUnique({
+    where: { url },
     include: {
       workflows: {
         include: {

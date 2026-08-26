@@ -3,7 +3,7 @@ import {
   createWorkflow,
   getWorkflowById,
   getWorkflowsByRepository,
-} from "../services/workflow.service.js";
+} from "../services/workflow/workflow.service.js";
 import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
 

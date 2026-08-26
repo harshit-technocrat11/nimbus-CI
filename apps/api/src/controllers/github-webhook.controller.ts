@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { prisma } from "@nimbus-ci/db";
-import { createWorkflowRun } from "../services/workflow-run.service.js";
+import { createWorkflowRun } from "../services/workflow/workflow.service.js";
 
 export const githubWebhookController = async (
   req: Request,

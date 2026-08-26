@@ -1,11 +1,13 @@
 import type { Request, Response } from "express";
+import { createWorkflowRun } from "../services/workflow/workflow.service.js";
 import {
-  createWorkflowRun,
-  getWorkflowRun,
-  getWorkflowRuns,
-  getJobsForRun,
+  getPipeline as getWorkflowRun,
+  getPipelinesByWorkflow as getWorkflowRuns,
+} from "../services/pipeline/pipeline.service.js";
+import {
+  getJobsForPipeline as getJobsForRun,
   getJobLogs,
-} from "../services/workflow-run.service.js";
+} from "../services/pipeline/job.service.js";
 import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
 
