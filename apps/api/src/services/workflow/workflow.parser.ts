@@ -3,6 +3,7 @@ import YAML from "yaml";
 export interface ParsedJob {
   name: string;
   image: string;
+  env?: Record<string, string>;
   steps: string[];
 }
 
@@ -11,57 +12,75 @@ export interface ParsedWorkflow {
   jobs: ParsedJob[];
 }
 
+// normalize the payload - yaml
 export class WorkflowParserService {
   parse(content: string): ParsedWorkflow {
-    const workflow = YAML.parse(content);
+  
+    const normalized = content
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .trim();
 
-    if (!workflow || typeof workflow !== "object") {
-      throw new Error("Invalid nimbus-ci.yml definition");
+    console.log("\n[Parser] Parsing Workflow YAML...");
+
+    let parsed: any;
+    try {
+      parsed = YAML.parse(normalized);
+    } catch (err: any) {
+      console.error("\n❌ [Parser] YAML Syntax Error:", err.message);
+      console.error("--- Raw Content ---");
+      console.error(normalized);
+      console.error("-------------------\n");
+      throw new Error(`YAML syntax error: ${err.message}`);
     }
 
-    if (!workflow.jobs || typeof workflow.jobs !== "object") {
-      throw new Error("Workflow must contain 'jobs'");
+    if (!parsed || typeof parsed !== "object" || !parsed.jobs) {
+      throw new Error("Invalid workflow YAML: 'jobs' section is required.");
     }
 
     const jobs: ParsedJob[] = [];
 
-    for (const [jobName, jobConfig] of Object.entries(workflow.jobs)) {
-      if (!jobConfig || typeof jobConfig !== "object") {
-        throw new Error(`Invalid configuration for job: ${jobName}`);
+    for (const [jobName, jobConfig] of Object.entries<any>(parsed.jobs)) {
+      if (!jobConfig || typeof jobConfig !== "object") continue;
+
+      const image = jobConfig.image || "node:22";
+      const rawSteps = jobConfig.steps || jobConfig.commands || [];
+
+      const steps: string[] = rawSteps
+        .map((s: any) => (typeof s === "string" ? s : s?.run || s?.command || ""))
+        .filter(Boolean);
+
+      if (steps.length === 0) {
+        throw new Error(`Job "${jobName}" must contain at least one step.`);
       }
 
-      const config = jobConfig as Record<string, unknown>;
-
-      const image = typeof config.image === "string" ? config.image : "node:22";
-
-      const rawSteps = config.steps ?? config.commands;
-
-      if (!Array.isArray(rawSteps) || rawSteps.length === 0) {
-        throw new Error(`Job "${jobName}" must contain at least one step`);
+      // Extract job-level environment variables
+      let env: Record<string, string> | undefined;
+      if (jobConfig.env && typeof jobConfig.env === "object") {
+        env = {};
+        for (const [key, val] of Object.entries(jobConfig.env)) {
+          env[key] = String(val);
+        }
       }
 
-      const steps: string[] = rawSteps.map((step) => {
-        if (typeof step === "string") {
-          return step;
-        }
-        if (step && typeof step === "object" && "command" in step && typeof (step as any).command === "string") {
-          return (step as any).command;
-        }
-        if (step && typeof step === "object" && "run" in step && typeof (step as any).run === "string") {
-          return (step as any).run;
-        }
-        throw new Error(`Step in job "${jobName}" must be a command string`);
-      });
+      console.log(
+        `  ⚙️  Parsed Job: [${jobName}] (image: ${image}, steps: ${steps.length}, env keys: ${
+          env ? Object.keys(env).join(", ") : "none"
+        })`
+      );
 
       jobs.push({
         name: jobName,
         image,
+        env,
         steps,
       });
     }
 
+    console.log(`✅ [Parser] Successfully parsed ${jobs.length} jobs (Workflow name: "${parsed.name || "unnamed"}")\n`);
+
     return {
-      name: typeof workflow.name === "string" ? workflow.name : undefined,
+      name: parsed.name,
       jobs,
     };
   }

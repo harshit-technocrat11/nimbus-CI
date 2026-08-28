@@ -3,7 +3,8 @@ import { docker } from "./client";
 export type ExecuteJobOptions = {
   image: string;
   steps: string[];
-  workspacePath: string,
+  env?: Record<string, string>;
+  workspacePath: string;
 };
 
 export type StepResult = {
@@ -21,8 +22,14 @@ export type JobExecutionResult = {
 
 async function createContainer(
   image: string,
-  workspacePath: string
+  workspacePath: string,
+  env?: Record<string, string>
 ) {
+  // passing the env variables in string format
+  const envArray = env
+    ? Object.entries(env).map(([key, val]) => `${key}=${val}`)
+    : [];
+
   return docker.createContainer({
     Image: image,
 
@@ -32,6 +39,8 @@ async function createContainer(
     OpenStdin: false,
 
     WorkingDir: "/workspace",
+
+    Env: envArray,
 
     HostConfig: {
       Binds: [
@@ -78,6 +87,7 @@ async function executeStep(
 export async function executeJob({
   image,
   steps,
+  env,
   workspacePath,
 }: ExecuteJobOptions): Promise<JobExecutionResult> {
 
@@ -87,7 +97,8 @@ export async function executeJob({
 
   const container = await createContainer(
     image,
-    workspacePath
+    workspacePath,
+    env
   );
 
   const results: StepResult[] = [];
@@ -126,7 +137,7 @@ export async function executeJob({
     };
 
   } finally {
-    console.log("\n🧹 Removing container...");
+    console.log("\nRemoving container...");
 
     try {
       await container.remove({

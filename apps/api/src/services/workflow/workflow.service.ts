@@ -6,6 +6,10 @@ import { parseWorkflow, type ParsedWorkflow } from "./workflow.parser.js";
 import { createPipeline } from "../pipeline/pipeline.service.js";
 import { createJobs } from "../pipeline/job.service.js";
 import { jobEnqueuerService } from "./job-enqueuer.service.js";
+import {
+  fetchWorkflowFromGitHub,
+  parseGitHubRepoInfo,
+} from "../github/github-fetcher.service.js";
 
 export interface RunWorkflowInput {
   workflowContent: string;
@@ -18,12 +22,10 @@ export interface RunWorkflowInput {
 
 export class WorkflowService {
   async runWorkflow(input: RunWorkflowInput) {
- 
     logger.info("[Workflow] Parsing workflow");
     const parsed: ParsedWorkflow = parseWorkflow(input.workflowContent);
     logger.info(`[Workflow] Parsed ${parsed.jobs.length} jobs`);
 
-  
     const pipeline = await createPipeline({
       workflowId: input.workflowId,
       branch: input.branch,
@@ -38,14 +40,14 @@ export class WorkflowService {
       parsed.jobs.map((job) => ({
         name: job.name,
         steps: job.steps,
-      }))
+      })),
     );
 
     for (const job of dbJobs) {
       logger.info(`[Job] Created ${job.name} <${job.id}>`);
     }
 
-    // 4. Map to Queue Payloads using the canonical PostgreSQL Job ID
+    
     const queuePayloads: ExecuteJobPayload[] = dbJobs.map((dbJob) => {
       const parsedJob = parsed.jobs.find((j) => j.name === dbJob.name);
       return {
@@ -55,11 +57,12 @@ export class WorkflowService {
         commitSha: input.commitSha ?? "HEAD",
         name: dbJob.name,
         image: parsedJob?.image || "node:22",
+        env: parsedJob?.env,
         steps: parsedJob?.steps || [],
       };
     });
 
-    // 5. Bulk enqueue all ready jobs to BullMQ
+    // Bulk enqueue jobs to BullMQ
     try {
       await jobEnqueuerService.enqueueJobs(queuePayloads);
     } catch (error) {
@@ -67,7 +70,6 @@ export class WorkflowService {
         error,
         pipelineId: pipeline.id,
       });
-     
     }
 
     return {
@@ -82,7 +84,7 @@ export class WorkflowService {
     options?: {
       branch?: string;
       commitSha?: string;
-    }
+    },
   ) {
     const workflow = await prisma.workflow.findUnique({
       where: { id: workflowId },
@@ -93,32 +95,56 @@ export class WorkflowService {
       throw new Error("Workflow not found");
     }
 
-    const branch = options?.branch || workflow.repository.defaultBranch || "main";
+    const branch =
+      options?.branch || workflow.repository.defaultBranch || "main";
     const commitSha = options?.commitSha || "HEAD";
 
-   
-    let workflowYaml: string;
-    if (typeof workflow.definition === "string") {
-      workflowYaml = workflow.definition;
-    } else {
-      const def = workflow.definition as any;
-      const jobsList = Array.isArray(def) ? def : def?.jobs ?? [];
-      const jobsObj: Record<string, any> = {};
+    let workflowYaml: string | undefined;
 
-      for (const j of jobsList) {
-        jobsObj[j.name] = {
-          image: j.image || "node:22",
-          steps: j.steps ?? j.commands ?? [],
-        };
+    // If we have a commit SHA, try to fetch the live YAML from GitHub first
+    if (commitSha && commitSha !== "HEAD" && workflow.repository?.url) {
+      const repoInfo = parseGitHubRepoInfo(workflow.repository.url);
+      if (repoInfo) {
+        const fetched = await fetchWorkflowFromGitHub(
+          repoInfo.owner,
+          repoInfo.repo,
+          commitSha,
+        );
+        if (fetched) {
+          workflowYaml = fetched.content;
+          logger.info(
+            `[Workflow] Using dynamically fetched workflow from GitHub at commit ${commitSha}`,
+          );
+        }
       }
+    }
 
-      workflowYaml = `name: ${workflow.name}\njobs:\n` +
-        Object.entries(jobsObj)
-          .map(([name, cfg]) =>
-            `  ${name}:\n    image: "${cfg.image}"\n    steps:\n` +
-            cfg.steps.map((s: string) => `      - "${s}"`).join("\n")
-          )
-          .join("\n");
+    // Fallback to definition stored in database
+    if (!workflowYaml) {
+      if (typeof workflow.definition === "string") {
+        workflowYaml = workflow.definition;
+      } else {
+        const def = workflow.definition as any;
+        const jobsList = Array.isArray(def) ? def : (def?.jobs ?? []);
+        const jobsObj: Record<string, any> = {};
+
+        for (const j of jobsList) {
+          jobsObj[j.name] = {
+            image: j.image || "node:22",
+            steps: j.steps ?? j.commands ?? [],
+          };
+        }
+
+        workflowYaml =
+          `name: ${workflow.name}\njobs:\n` +
+          Object.entries(jobsObj)
+            .map(
+              ([name, cfg]) =>
+                `  ${name}:\n    image: "${cfg.image}"\n    steps:\n` +
+                cfg.steps.map((s: string) => `      - "${s}"`).join("\n"),
+            )
+            .join("\n");
+      }
     }
 
     return this.runWorkflow({
@@ -176,7 +202,7 @@ export const getWorkflowById = (id: string) =>
   workflowService.getWorkflowById(id);
 export const createWorkflowRun = async (
   workflowId: string,
-  input?: { branch?: string; commitSha?: string }
+  input?: { branch?: string; commitSha?: string },
 ) => {
   const result = await workflowService.runWorkflowById(workflowId, input);
   return result.pipeline;

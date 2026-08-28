@@ -8,5 +8,7 @@ export interface ExecuteJobPayload {
   name: string;
   image: string;
 
+  env?: Record<string, string>;
   steps: string[];
 }
+

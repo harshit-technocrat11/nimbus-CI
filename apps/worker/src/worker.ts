@@ -12,7 +12,7 @@ const worker = new Worker(
     logger.info(`Job data: ${JSON.stringify(job.data)}`);
 
     // extract job data
-    const { image, steps, commands, repositoryUrl, commitSha } = job.data;
+    const { image, steps, commands, env, repositoryUrl, commitSha } = job.data;
 
     // Validate job data
 
@@ -52,6 +52,7 @@ const worker = new Worker(
       const result = await executeJob({
         image,
         steps: jobSteps,
+        env,
         workspacePath,
       });
 
