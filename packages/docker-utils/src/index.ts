@@ -1,8 +1,8 @@
-export { docker } from "./client";
-export { executeJob } from "./executor";
+export { docker } from "./client.js";
+export * from "./executor.js";
 
 export type {
   ExecuteJobOptions,
   JobExecutionResult,
   StepResult,
-} from "./executor";
+} from "./executor.js";

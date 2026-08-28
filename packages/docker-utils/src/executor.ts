@@ -3,6 +3,7 @@ import { docker } from "./client";
 export type ExecuteJobOptions = {
   image: string;
   steps: string[];
+  workspacePath: string,
 };
 
 export type StepResult = {
@@ -15,50 +16,90 @@ export type JobExecutionResult = {
   steps: StepResult[];
 };
 
+
+// create container instance
+
+async function createContainer(
+  image: string,
+  workspacePath: string
+) {
+  return docker.createContainer({
+    Image: image,
+
+    Cmd: ["tail", "-f", "/dev/null"],
+
+    Tty: false,
+    OpenStdin: false,
+
+    WorkingDir: "/workspace",
+
+    HostConfig: {
+      Binds: [
+        `${workspacePath}:/workspace`,
+      ],
+    },
+  });
+}
+
+
+async function executeStep(
+  container: any,
+  step: string
+): Promise<number> {
+  console.log(`\n▶️ Step: ${step}`);
+
+  const exec = await container.exec({
+    Cmd: ["sh", "-c", step],
+    AttachStdout: true,
+    AttachStderr: true,
+  });
+
+  const stream = await exec.start({
+    hijack: true,
+    stdin: false,
+  });
+
+  stream.on("data", (chunk: Buffer) => {
+    process.stdout.write(chunk);
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    stream.on("end", resolve);
+    stream.on("error", reject);
+  });
+
+  const inspection = await exec.inspect();
+
+  return inspection.ExitCode ?? 1;
+}
+
+// execute and clean up
+
 export async function executeJob({
   image,
   steps,
+  workspacePath,
 }: ExecuteJobOptions): Promise<JobExecutionResult> {
-  console.log(`Starting container with image: ${image}`);
 
-  const container = await docker.createContainer({
-    Image: image,
-    Cmd: ["tail", "-f", "/dev/null"],
-    Tty: false,
-    OpenStdin: false,
-  });
+  console.log(
+    `Starting container with image: ${image}`
+  );
+
+  const container = await createContainer(
+    image,
+    workspacePath
+  );
 
   const results: StepResult[] = [];
 
   try {
     await container.start();
 
-    for (const [index, step] of steps.entries()) {
-      console.log(`\n▶️ Step ${index + 1}: ${step}`);
-
-      const exec = await container.exec({
-        Cmd: ["sh", "-c", step],
-        AttachStdout: true,
-        AttachStderr: true,
-      });
-
-      const stream = await exec.start({
-        hijack: true,
-        stdin: false,
-      });
-
-      stream.on("data", (chunk: Buffer) => {
-        process.stdout.write(chunk);
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        stream.on("end", resolve);
-        stream.on("error", reject);
-      });
-
-      const inspection = await exec.inspect();
-
-      const exitCode = inspection.ExitCode ?? 1;
+    for (const step of steps) {
+      const exitCode = await executeStep(
+        container,
+        step
+      );
 
       results.push({
         step,
@@ -66,7 +107,9 @@ export async function executeJob({
       });
 
       if (exitCode !== 0) {
-        console.log(`❌ Step failed with exit code ${exitCode}`);
+        console.log(
+          `❌ Step failed with exit code ${exitCode}`
+        );
 
         return {
           success: false,
@@ -81,15 +124,19 @@ export async function executeJob({
       success: true,
       steps: results,
     };
+
   } finally {
-    console.log("\n Removing container...");
+    console.log("\n🧹 Removing container...");
 
     try {
       await container.remove({
         force: true,
       });
     } catch (error) {
-      console.error("Failed to remove container:", error);
+      console.error(
+        "Failed to remove container:",
+        error
+      );
     }
   }
 }

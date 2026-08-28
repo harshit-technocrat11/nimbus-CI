@@ -1,5 +1,7 @@
 import type { GitHubPushPayload, ExtractedPushInfo } from "./github.types.js";
 
+// extracts, the infor from PUSH event
+
 export class GitHubService {
   extractPushInfo(payload: GitHubPushPayload): ExtractedPushInfo | null {
     const repository = payload.repository;
