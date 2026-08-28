@@ -1,0 +1,25 @@
+FROM node:22-alpine
+
+
+RUN apk add --no-cache git
+
+RUN npm install -g pnpm@11.22.0
+
+WORKDIR /app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+
+COPY packages/ ./packages/
+COPY apps/worker/ ./apps/worker/
+
+RUN pnpm install
+
+# Create default workspaces directory
+RUN mkdir -p /app/apps/worker/workspaces
+
+ENV WORKSPACE_ROOT=/app/apps/worker/workspaces
+ENV DOCKER_SOCKET=/var/run/docker.sock
+
+WORKDIR /app/apps/worker
+
+CMD ["pnpm", "run", "dev"]

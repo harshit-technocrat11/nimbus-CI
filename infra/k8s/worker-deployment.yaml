@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nimbus-worker
+  labels:
+    app: nimbus-worker
+spec:
+  replicas: 2 # Spawns 2 worker pod instances
+  selector:
+    matchLabels:
+      app: nimbus-worker
+  template:
+    metadata:
+      labels:
+        app: nimbus-worker
+    spec:
+      containers:
+        - name: worker
+          image: nimbus-ci-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_HOST
+              value: "host.docker.internal"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DOCKER_SOCKET
+              value: "/var/run/docker.sock"
+            - name: WORKSPACE_ROOT
+              value: "/app/apps/worker/workspaces"
+          volumeMounts:
+            # Mount host Docker socket to spawn CI containers
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
