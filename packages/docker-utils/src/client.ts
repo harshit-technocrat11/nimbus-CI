@@ -2,10 +2,13 @@ import Docker from "dockerode"
 
 // direct connection to docker daemon
 
-export const docker = new Docker ({
-    // for mac - linux os
-    // socketPath: "/var/run/docker.sock",
-    
-    socketPath: "\\\\.\\pipe\\docker_engine", //windows os
-})
+const socketPath =
+  process.env.DOCKER_SOCKET ||
+  (process.platform === "win32"
+    ? "\\\\.\\pipe\\docker_engine"
+    : "/var/run/docker.sock");
+
+export const docker = new Docker({
+  socketPath,
+});
 

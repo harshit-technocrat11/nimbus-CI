@@ -14,7 +14,7 @@ export class JobEnqueuerService {
       name: "execute-job",
       data: job,
       opts: {
-        attempts: 3,
+        attempts: 2,
         backoff: {
           type: "exponential",
           delay: 5000,

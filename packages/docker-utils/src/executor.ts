@@ -17,6 +17,35 @@ export type JobExecutionResult = {
   steps: StepResult[];
 };
 
+// if image doesnt exist locally , pull it
+async function ensureImage(image: string): Promise<void> {
+  try {
+    await docker.getImage(image).inspect();
+
+    console.log(`📦Image already available: ${image}`);
+  } catch {
+    console.log(`📥Pulling Docker image: ${image}`);
+
+    const stream = await docker.pull(image);
+
+    await new Promise<void>((resolve, reject) => {
+      docker.modem.followProgress(
+        stream,
+        (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        },
+      );
+    });
+
+    console.log(`✅ Image pulled: ${image}`);
+  }
+}
+
 
 // create container instance
 
@@ -90,6 +119,9 @@ export async function executeJob({
   env,
   workspacePath,
 }: ExecuteJobOptions): Promise<JobExecutionResult> {
+
+  // ensure image is available locally 
+  await ensureImage(image);
 
   console.log(
     `Starting container with image: ${image}`
