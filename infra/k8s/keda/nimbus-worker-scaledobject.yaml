@@ -1,6 +1,5 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
-
 metadata:
   name: nimbus-worker-scaler
 
@@ -32,9 +31,8 @@ spec:
               periodSeconds: 60
 
   triggers:
-    - type: redis
+    - type: prometheus
       metadata:
-        address: host.docker.internal:6379
-        listName: bull:ci-jobs:wait
-        listLength: "1"
-        activationListLength: "1"
+        serverAddress: http://prometheus.default.svc.cluster.local:9090
+        query: nimbus_ci_queue_waiting
+        threshold: "1"
