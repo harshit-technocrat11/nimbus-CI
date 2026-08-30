@@ -19,6 +19,6 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../packages/queue/src/metrics.ts"],
   "exclude": ["node_modules", "dist"]
 }   

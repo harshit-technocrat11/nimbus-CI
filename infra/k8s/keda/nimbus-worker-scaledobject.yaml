@@ -1,0 +1,40 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+
+metadata:
+  name: nimbus-worker-scaler
+
+spec:
+  scaleTargetRef:
+    name: nimbus-worker
+
+  minReplicaCount: 1
+  maxReplicaCount: 4
+
+  pollingInterval: 5
+  cooldownPeriod: 60
+
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Pods
+              value: 4
+              periodSeconds: 30
+
+        scaleDown:
+          stabilizationWindowSeconds: 60
+          policies:
+            - type: Pods
+              value: 2
+              periodSeconds: 60
+
+  triggers:
+    - type: redis
+      metadata:
+        address: host.docker.internal:6379
+        listName: bull:ci-jobs:wait
+        listLength: "1"
+        activationListLength: "1"
