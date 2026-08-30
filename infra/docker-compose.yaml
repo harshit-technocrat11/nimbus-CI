@@ -39,6 +39,21 @@ services:
     depends_on:
       - redis
 
+  metrics:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.metrics
+    container_name: nimbus-ci-metrics
+    restart: unless-stopped
+    environment:
+      - PORT=9090
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "9090:9090"
+    depends_on:
+      - redis
+
 volumes:
   redis_data:
   postgres_data:
