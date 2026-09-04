@@ -1,0 +1,20 @@
+{
+  "name": "@nimbus-ci/kafka",
+  "version": "1.0.0",
+  "description": "Shared Kafka client, producer, and consumer package for Nimbus CI",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nimbus-ci/logger": "workspace:*",
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "typescript": "^7.0.2"
+  }
+}
