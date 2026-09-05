@@ -18,6 +18,7 @@
     "@nimbus-ci/logger": "workspace:*",
     "@nimbus-ci/queue": "workspace:^",
     "bullmq": "^6.1.2",
+    "dotenv": "^17.4.2",
     "ioredis": "^6.0.0"
   },
   "devDependencies": {

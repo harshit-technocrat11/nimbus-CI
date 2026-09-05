@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ConnectionClosedError, Worker } from "bullmq";
 import { redisConnection, CI_QUEUE_NAME } from "@nimbus-ci/queue";
 import { executeJob } from "@nimbus-ci/docker-utils";
@@ -67,6 +68,7 @@ const worker = new Worker(
             );
           } catch (err) {
             logger.error(`Failed to stream log to Kafka for job ${job.id}`, { err });
+            console.log(err)
           }
         };
 
@@ -101,7 +103,6 @@ const worker = new Worker(
       logger.info(`Job ${job.id} completed successfully`);
 
       return result;
-
     } 
     finally {
       // 5.  cleanup workspace

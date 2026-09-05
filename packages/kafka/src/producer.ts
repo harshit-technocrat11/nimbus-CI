@@ -1,7 +1,9 @@
+import { Partitioners } from "kafkajs";
 import { kafka, LOGS_TOPIC } from "./client.js";
 
 export const producer = kafka.producer({
   allowAutoTopicCreation: true,
+  createPartitioner: Partitioners.DefaultPartitioner,
 });
 
 export const connectProducer = async (): Promise<void> => {

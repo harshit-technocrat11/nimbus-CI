@@ -1,0 +1,25 @@
+{
+  "name": "streamer",
+  "version": "1.0.0",
+  "description": "Nimbus CI Real-time WebSocket Log Streaming Service",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@nimbus-ci/db": "workspace:*",
+    "@nimbus-ci/kafka": "workspace:*",
+    "@nimbus-ci/logger": "workspace:*",
+    "dotenv": "^17.4.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/ws": "^8.5.14",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
