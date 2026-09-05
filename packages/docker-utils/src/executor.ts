@@ -1,10 +1,11 @@
-import { docker } from "./client";
+import { docker } from "./client.js";
 
 export type ExecuteJobOptions = {
   image: string;
   steps: string[];
   env?: Record<string, string>;
   workspacePath: string;
+  onLog?: (log: string) => void | Promise<void>;
 };
 
 export type StepResult = {
@@ -82,9 +83,14 @@ async function createContainer(
 
 async function executeStep(
   container: any,
-  step: string
+  step: string,
+  onLog?: (log: string) => void | Promise<void>
+
 ): Promise<number> {
-  console.log(`\n▶️ Step: ${step}`);
+
+  const stepHeader = `\n▶️ Step: ${step}\n`;
+  console.log(stepHeader);
+  if (onLog) await onLog(stepHeader);
 
   const exec = await container.exec({
     Cmd: ["sh", "-c", step],
@@ -98,8 +104,13 @@ async function executeStep(
   });
 
   stream.on("data", (chunk: Buffer) => {
-    process.stdout.write(chunk);
+    const text = chunk.toString();
+    process.stdout.write(text);
+    if (onLog) {
+      onLog(text);
+    }
   });
+
 
   await new Promise<void>((resolve, reject) => {
     stream.on("end", resolve);
@@ -118,6 +129,7 @@ export async function executeJob({
   steps,
   env,
   workspacePath,
+  onLog,
 }: ExecuteJobOptions): Promise<JobExecutionResult> {
 
   // ensure image is available locally 
@@ -139,35 +151,20 @@ export async function executeJob({
     await container.start();
 
     for (const step of steps) {
-      const exitCode = await executeStep(
-        container,
-        step
-      );
+      const exitCode = await executeStep(container, step, onLog);
 
-      results.push({
-        step,
-        exitCode,
-      });
-
+      results.push({ step, exitCode });
       if (exitCode !== 0) {
-        console.log(
-          `❌ Step failed with exit code ${exitCode}`
-        );
-
-        return {
-          success: false,
-          steps: results,
-        };
+        const failMsg = `\n❌ Step failed with exit code ${exitCode}\n`;
+        console.log(failMsg);
+        if (onLog) await onLog(failMsg);
+        return { success: false, steps: results };
       }
-
-      console.log(`✅ Step completed`);
+      const successMsg = `✅ Step completed\n`;
+      console.log(successMsg);
+      if (onLog) await onLog(successMsg);
     }
-
-    return {
-      success: true,
-      steps: results,
-    };
-
+    return { success: true, steps: results };
   } finally {
     console.log("\nRemoving container...");
 
