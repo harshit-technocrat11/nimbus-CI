@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { JobLog, WorkflowRunStatus, JobStatus } from '../types/ci';
 import { api } from '../lib/api';
 
+const STREAMER_WS_URL =
+  process.env.NEXT_PUBLIC_STREAMER_URL || 'ws://localhost:8001/ws';
+
 interface UseWorkflowStreamProps {
   jobId?: string;
   initialLogs?: JobLog[];
@@ -22,25 +25,30 @@ export function useWorkflowStream({
 }: UseWorkflowStreamProps) {
   const [logs, setLogs] = useState<JobLog[]>(initialLogs);
   const [currentStatus, setCurrentStatus] = useState<JobStatus>(jobStatus);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('offline');
   const [isFollowing, setIsFollowing] = useState<boolean>(true);
   const logsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Sync initial logs if they change
+  // 1. Sync initialLogs if passed via props
   useEffect(() => {
     if (initialLogs.length > 0) {
       setLogs(initialLogs);
     }
   }, [initialLogs]);
 
-  // Load existing logs on mount/jobId change
+  // 2. Fetch historical logs from REST API on mount
   useEffect(() => {
     if (!jobId) return;
 
     let isMounted = true;
     api.getJobLogs(jobId).then((fetchedLogs) => {
       if (isMounted && fetchedLogs.length > 0) {
-        setLogs(fetchedLogs);
+        setLogs((prev) => {
+          // Merge without duplicate IDs
+          const existingIds = new Set(prev.map((l) => l.id));
+          const newEntries = fetchedLogs.filter((l) => !existingIds.has(l.id));
+          return [...prev, ...newEntries].sort((a, b) => a.sequence - b.sequence);
+        });
       }
     });
 
@@ -49,48 +57,81 @@ export function useWorkflowStream({
     };
   }, [jobId]);
 
-  // Live log simulation if job is RUNNING
+  // 3. Connect to Real-time WebSocket Streamer
   useEffect(() => {
-    if (!jobId || !isLive || currentStatus !== 'RUNNING') return;
+    if (!jobId) return;
 
-    const streamLines = [
-      { stream: 'STDOUT' as const, message: '$ executing docker environment container image...' },
-      { stream: 'STDOUT' as const, message: 'Container ID: 9f8a32bc17d0 allocated on runner' },
-      { stream: 'STDOUT' as const, message: '$ installing workspace dependencies...' },
-      { stream: 'STDOUT' as const, message: 'Packages: +42 verified in cache (1.1s)' },
-      { stream: 'STDOUT' as const, message: '$ executing build & test scripts...' },
-      { stream: 'STDOUT' as const, message: '✔ Unit test suite 12/12 passed (340ms)' },
-      { stream: 'STDOUT' as const, message: '✔ Typecheck zero diagnostics found' },
-      { stream: 'STDOUT' as const, message: '✨ Build output generated: dist/ (size 4.2 MB)' },
-      { stream: 'STDOUT' as const, message: 'Nimbus CI Job completed successfully with exit code 0' },
-    ];
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isCleanedUp = false;
 
-    let lineIndex = 0;
-    const interval = setInterval(() => {
-      if (lineIndex < streamLines.length) {
-        const item = streamLines[lineIndex];
-        if (item) {
-          const newLog: JobLog = {
-            id: `stream-${Date.now()}-${lineIndex}`,
-            jobId,
-            sequence: logs.length + lineIndex + 1,
-            stream: item.stream,
-            message: item.message,
-            createdAt: new Date().toISOString(),
-          };
-          setLogs((prev) => [...prev, newLog]);
-        }
-        lineIndex++;
-      } else {
-        clearInterval(interval);
-        setCurrentStatus('SUCCESS');
+    const connect = () => {
+      if (isCleanedUp) return;
+
+      try {
+        const wsUrl = `${STREAMER_WS_URL}?jobId=${encodeURIComponent(jobId)}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          setConnectionStatus('connected');
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const rawData = JSON.parse(event.data);
+            
+            const newLog: JobLog = {
+              id: rawData.id || `ws-${Date.now()}-${Math.random()}`,
+              jobId: rawData.jobId || jobId,
+              sequence: rawData.sequence ?? Date.now(),
+              stream: rawData.stream || 'STDOUT',
+              message: rawData.message || event.data,
+              createdAt: rawData.timestamp
+                ? new Date(rawData.timestamp).toISOString()
+                : new Date().toISOString(),
+            };
+
+            setLogs((prev) => [...prev, newLog]);
+          } catch {
+            // Fallback for non-JSON raw text
+            const newLog: JobLog = {
+              id: `ws-${Date.now()}-${Math.random()}`,
+              jobId,
+              sequence: Date.now(),
+              stream: 'STDOUT',
+              message: event.data,
+              createdAt: new Date().toISOString(),
+            };
+            setLogs((prev) => [...prev, newLog]);
+          }
+        };
+
+        ws.onclose = () => {
+          if (!isCleanedUp) {
+            setConnectionStatus('offline');
+            // Try reconnecting after 3 seconds if job is still active
+            reconnectTimeout = setTimeout(connect, 3000);
+          }
+        };
+
+        ws.onerror = () => {
+          setConnectionStatus('offline');
+        };
+      } catch (err) {
+        setConnectionStatus('offline');
       }
-    }, 1800);
+    };
 
-    return () => clearInterval(interval);
-  }, [jobId, isLive, currentStatus, logs.length]);
+    connect();
 
-  // Auto-scroll when following
+    return () => {
+      isCleanedUp = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (ws) ws.close();
+    };
+  }, [jobId, isLive]);
+
+  // 4. Auto-scroll terminal down when following
   useEffect(() => {
     if (isFollowing && logsContainerRef.current) {
       logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
@@ -99,7 +140,8 @@ export function useWorkflowStream({
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    const isAtBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 30;
+    const isAtBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight < 40;
     setIsFollowing(isAtBottom);
   }, []);
 

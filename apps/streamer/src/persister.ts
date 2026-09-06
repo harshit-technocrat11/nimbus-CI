@@ -8,7 +8,9 @@ interface LogItem {
   message: string;
 }
 
-// Batchwise- logs to DB
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 class LogPersister {
   private buffer: LogItem[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
@@ -16,6 +18,11 @@ class LogPersister {
   private readonly FLUSH_INTERVAL_MS = 500;
 
   public queue(item: LogItem) {
+    // Only queue valid UUIDs that match PostgreSQL @db.Uuid
+    if (!UUID_REGEX.test(item.jobId)) {
+      return;
+    }
+
     this.buffer.push(item);
 
     if (this.buffer.length >= this.BATCH_SIZE) {
@@ -41,8 +48,11 @@ class LogPersister {
         data: toInsert,
         skipDuplicates: true,
       });
-    } catch (error) {
-      logger.error("[LogPersister] Failed to batch insert logs", { error });
+    } catch (error: any) {
+      logger.error("[LogPersister] Failed to batch insert logs", {
+        error: error?.message || error,
+      });
+      console.error("[LogPersister Error Details]:", error);
     }
   }
 }

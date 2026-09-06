@@ -350,7 +350,14 @@ export const api = {
 
   // Workflow Runs
   async getAllRuns(): Promise<WorkflowRun[]> {
-    return localStore.getAllRuns();
+    try {
+      const res = await fetch(`${API_BASE_URL}/runs`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('API request failed');
+      const data = await res.json();
+      return Array.isArray(data) && data.length > 0 ? data : localStore.getAllRuns();
+    } catch {
+      return localStore.getAllRuns();
+    }
   },
 
   async getWorkflowRuns(workflowId: string): Promise<WorkflowRun[]> {

@@ -3,6 +3,7 @@ import { createWorkflowRun } from "../services/workflow/workflow.service.js";
 import {
   getPipeline as getWorkflowRun,
   getPipelinesByWorkflow as getWorkflowRuns,
+  getAllPipelines,
 } from "../services/pipeline/pipeline.service.js";
 import {
   getJobsForPipeline as getJobsForRun,
@@ -10,6 +11,8 @@ import {
 } from "../services/pipeline/job.service.js";
 import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const createWorkflowRunController = async (
   req: Request,
@@ -44,6 +47,21 @@ export const createWorkflowRunController = async (
   }
 };
 
+export const getAllWorkflowRunsController = async (
+  _req: Request,
+  res: Response
+) => {
+  try {
+    const runs = await getAllPipelines();
+    return res.json(runs);
+  } catch (error) {
+    logger.error("Failed to fetch all workflow runs", { error });
+    return res.status(500).json({
+      message: "Failed to fetch workflow runs",
+    });
+  }
+};
+
 export const getWorkflowRunController = async (
   req: Request,
   res: Response
@@ -52,6 +70,10 @@ export const getWorkflowRunController = async (
     const id = getParam(req.params.id);
     if (!id) {
       return res.status(400).json({ message: "Workflow run ID is required" });
+    }
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ message: "Workflow run not found" });
     }
 
     const run = await getWorkflowRun(id);
@@ -82,6 +104,10 @@ export const getWorkflowRunsController = async (
       return res.status(400).json({ message: "Workflow ID is required" });
     }
 
+    if (!UUID_REGEX.test(workflowId)) {
+      return res.json([]);
+    }
+
     const runs = await getWorkflowRuns(workflowId);
 
     return res.json(runs);
@@ -104,6 +130,10 @@ export const getJobsController = async (
       return res.status(400).json({ message: "Run ID is required" });
     }
 
+    if (!UUID_REGEX.test(runId)) {
+      return res.json([]);
+    }
+
     const jobs = await getJobsForRun(runId);
 
     return res.json(jobs);
@@ -124,6 +154,10 @@ export const getJobLogsController = async (
     const jobId = getParam(req.params.jobId);
     if (!jobId) {
       return res.status(400).json({ message: "Job ID is required" });
+    }
+
+    if (!UUID_REGEX.test(jobId)) {
+      return res.json([]);
     }
 
     const logs = await getJobLogs(jobId);

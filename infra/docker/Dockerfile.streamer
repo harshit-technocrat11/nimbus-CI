@@ -1,0 +1,20 @@
+FROM node:22-alpine
+
+RUN npm install -g pnpm@11.22.0
+
+WORKDIR /app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+
+COPY packages/ ./packages/
+COPY apps/streamer/ ./apps/streamer/
+
+RUN pnpm install
+
+WORKDIR /app/apps/streamer
+
+EXPOSE 8001
+
+ENV PORT=8001
+
+CMD ["pnpm", "run", "dev"]

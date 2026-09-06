@@ -37,6 +37,26 @@ export const getPipeline = async (id: string) => {
   });
 };
 
+export const getAllPipelines = async () => {
+  return prisma.workflowRun.findMany({
+    include: {
+      workflow: {
+        include: {
+          repository: true,
+        },
+      },
+      jobs: {
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
 export const getPipelinesByWorkflow = async (workflowId: string) => {
   return prisma.workflowRun.findMany({
     where: { workflowId },

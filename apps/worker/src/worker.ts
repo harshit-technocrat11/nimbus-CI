@@ -25,7 +25,8 @@ const worker = new Worker(
     logger.info(`Job data: ${JSON.stringify(job.data)}`);
 
     // extract job data
-    const { image, steps, commands, env, repositoryUrl, commitSha } = job.data;
+    const { image, steps, commands, env, repositoryUrl, commitSha, jobId } = job.data;
+    const targetJobId = jobId || job.id!;
 
     // Validate job data
 
@@ -57,9 +58,9 @@ const worker = new Worker(
           sequence++;
           try {
             await emitLog(
-              job.id!,
+              targetJobId,
               JSON.stringify({
-                jobId: job.id,
+                jobId: targetJobId,
                 sequence,
                 stream,
                 message: text,
@@ -67,8 +68,7 @@ const worker = new Worker(
               })
             );
           } catch (err) {
-            logger.error(`Failed to stream log to Kafka for job ${job.id}`, { err });
-            console.log(err)
+            logger.error(`Failed to stream log to Kafka for job ${targetJobId}`, { err });
           }
         };
 

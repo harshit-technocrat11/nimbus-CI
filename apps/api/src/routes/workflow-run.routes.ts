@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createWorkflowRunController,
+  getAllWorkflowRunsController,
   getWorkflowRunController,
   getWorkflowRunsController,
   getJobsController,
@@ -20,6 +21,11 @@ router.post(
 router.get(
   "/workflows/:workflowId/runs",
   getWorkflowRunsController
+);
+
+router.get(
+  "/runs",
+  getAllWorkflowRunsController
 );
 
 router.get(

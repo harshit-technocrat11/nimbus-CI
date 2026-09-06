@@ -1,0 +1,55 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+      - 'apps/worker/**'
+      - 'apps/streamer/**'
+      - 'apps/metrics/**'
+      - 'packages/**'
+      - 'infra/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute Remote SSH Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            echo "🚀 Pulling latest code on EC2..."
+            cd ~/nimbus_ci || {
+              git clone https://github.com/${{ github.repository }}.git ~/nimbus_ci
+              cd ~/nimbus_ci
+            }
+            git fetch --all
+            git reset --hard origin/main
+
+            echo "📦 Installing dependencies and running database migrations..."
+            pnpm install --frozen-lockfile
+            pnpm --filter @nimbus-ci/db prisma:migrate || true
+
+            echo "🔄 Restarting microservices..."
+            if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null; then
+              echo "Applying Kubernetes manifests via K3s..."
+              kubectl apply -f infra/k8s/
+              kubectl rollout restart deployment nimbus-worker || true
+            elif command -v docker &> /dev/null; then
+              echo "Rebuilding and starting Docker Compose services..."
+              docker compose -f infra/docker-compose.yaml up -d --build
+            fi
+
+            echo "✅ Deployment completed successfully!"
