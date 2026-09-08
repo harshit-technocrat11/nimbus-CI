@@ -38,18 +38,26 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
+          envs: GITHUB_REPOSITORY
           script: |
+            set -e
             echo "🚀 [1/5] Setting up environment paths..."
-            export PATH=$PATH:/usr/local/bin:/usr/bin:~/.local/share/pnpm:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.local/share/pnpm:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-            echo "📥 [2/5] Pulling latest code on EC2..."
-            if [ ! -d "$HOME/nimbus_ci/.git" ]; then
-              git clone https://github.com/${{ github.repository }}.git $HOME/nimbus_ci
-            fi
+            echo "📥 [2/5] Syncing latest code on EC2..."
+            mkdir -p $HOME/nimbus_ci
             cd $HOME/nimbus_ci
-            git fetch --all
+
+            if [ ! -d ".git" ]; then
+              echo "Initializing git repository in existing folder..."
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+            fi
+
+            git remote set-url origin https://github.com/${{ github.repository }}.git
+            git fetch origin main
             git reset --hard origin/main
 
             echo "📦 [3/5] Installing dependencies & syncing database..."
