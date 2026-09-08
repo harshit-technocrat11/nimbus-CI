@@ -28,6 +28,8 @@ services:
       dockerfile: infra/docker/Dockerfile.worker
     container_name: nimbus-ci-worker
     restart: unless-stopped
+    env_file:
+      - ../.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -38,6 +40,36 @@ services:
       - ../apps/worker/workspaces:/app/apps/worker/workspaces
     depends_on:
       - redis
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: nimbus-ci-api
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - PORT=8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  streamer:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.streamer
+    container_name: nimbus-ci-streamer
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - PORT=8001
+    ports:
+      - "8001:8001"
 
   metrics:
     build:

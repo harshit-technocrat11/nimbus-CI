@@ -46,3 +46,7 @@ agent-context/
 gemini.md
 
 PROJECT_CONTEXT.md
+
+# Worker Workspaces
+apps/worker/workspaces/
+workspaces/
