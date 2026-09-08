@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Kafka } from "kafkajs";
+import { Kafka, type KafkaConfig } from "kafkajs";
 
 const getBrokers = (): string[] => {
   const brokersEnv = process.env.KAFKA_BROKERS;
@@ -15,16 +15,18 @@ const username = process.env.KAFKA_SASL_USERNAME;
 const password = process.env.KAFKA_SASL_PASSWORD;
 const useSsl = process.env.KAFKA_SSL === "true";
 
-export const kafka = new Kafka({
+const kafkaConfig: KafkaConfig = {
   clientId: process.env.KAFKA_CLIENT_ID || "nimbus-ci",
   brokers: getBrokers(),
   ssl: useSsl ? { rejectUnauthorized: false } : false,
-  sasl:
-    username && password
-      ? {
-          mechanism: (process.env.KAFKA_SASL_MECHANISM as any) || "scram-sha-256",
-          username,
-          password,
-        }
-      : undefined,
-});
+};
+
+if (username && password) {
+  kafkaConfig.sasl = {
+    mechanism: (process.env.KAFKA_SASL_MECHANISM as any) || "scram-sha-256",
+    username,
+    password,
+  };
+}
+
+export const kafka = new Kafka(kafkaConfig);

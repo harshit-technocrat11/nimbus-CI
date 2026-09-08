@@ -3,12 +3,12 @@ import YAML from "yaml";
 export interface ParsedJob {
   name: string;
   image: string;
-  env?: Record<string, string>;
+  env?: Record<string, string> | undefined;
   steps: string[];
 }
 
 export interface ParsedWorkflow {
-  name?: string;
+  name?: string | undefined;
   jobs: ParsedJob[];
 }
 
