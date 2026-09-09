@@ -16,6 +16,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import { Search, GitBranch, PlaySquare, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { WorkflowRun } from '../../types/ci';
 import { StatusBadge } from '../common/StatusBadge';
 import { TriggerBadge } from '../common/TriggerBadge';
@@ -35,6 +36,7 @@ export function RunList({
   title,
   subtitle,
 }: RunListProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUCCESS' | 'RUNNING' | 'FAILED' | 'QUEUED'>('ALL');
 
@@ -167,11 +169,9 @@ export function RunList({
                   <TableRow
                     key={run.id}
                     hover
-                    component={Link}
-                    href={`/runs/${run.id}`}
+                    onClick={() => router.push(`/runs/${run.id}`)}
                     sx={{
                       cursor: 'pointer',
-                      textDecoration: 'none',
                       '&:last-child td, &:last-child th': { border: 0 },
                     }}
                   >

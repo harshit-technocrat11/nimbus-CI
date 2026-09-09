@@ -195,79 +195,45 @@ export function RepositoryList({
                     }}
                   >
                     {/* Repository Name & Owner */}
-                    <TableCell
-                      component={Link}
-                      href={`/repositories/${repo.id}`}
-                      sx={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                        <Box
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#94A3B8',
-                          }}
-                        >
-                          <FolderGit2 size={14} />
-                        </Box>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: '#F8FAFC', '&:hover': { color: '#60A5FA' } }}
+                    <TableCell>
+                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                          <Box
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#94A3B8',
+                            }}
                           >
-                            {repo.name}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {repo.owner}
-                          </Typography>
+                            <FolderGit2 size={14} />
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600, color: '#F8FAFC', '&:hover': { color: '#60A5FA' } }}
+                            >
+                              {repo.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>
+                              {repo.owner}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
+                      </Link>
                     </TableCell>
 
                     {/* Status Badge */}
-                    <TableCell
-                      component={Link}
-                      href={`/repositories/${repo.id}`}
-                      sx={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      {latestRun ? (
-                        <StatusBadge status={latestRun.status} />
-                      ) : (
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: '#64748B',
-                            fontFamily: 'var(--font-geist-mono), monospace',
-                          }}
-                        >
-                          ○ NO RUNS
-                        </Typography>
-                      )}
-                    </TableCell>
-
-                    {/* Commit & Branch */}
-                    <TableCell
-                      component={Link}
-                      href={`/repositories/${repo.id}`}
-                      sx={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#94A3B8' }}>
-                          <GitBranch size={12} color="#64748B" />
-                          <Typography
-                            variant="caption"
-                            sx={{ fontFamily: 'var(--font-geist-mono), monospace', fontWeight: 500 }}
-                          >
-                            {latestRun?.branch || repo.defaultBranch}
-                          </Typography>
-                        </Box>
-                        {latestRun?.commitSha && (
+                    <TableCell>
+                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                        {latestRun ? (
+                          <StatusBadge status={latestRun.status} />
+                        ) : (
                           <Typography
                             variant="caption"
                             sx={{
@@ -275,39 +241,65 @@ export function RepositoryList({
                               fontFamily: 'var(--font-geist-mono), monospace',
                             }}
                           >
-                            · {formatShortSha(latestRun.commitSha)}
+                            ○ NO RUNS
                           </Typography>
                         )}
-                      </Box>
+                      </Link>
+                    </TableCell>
+
+                    {/* Commit & Branch */}
+                    <TableCell>
+                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#94A3B8' }}>
+                            <GitBranch size={12} color="#64748B" />
+                            <Typography
+                              variant="caption"
+                              sx={{ fontFamily: 'var(--font-geist-mono), monospace', fontWeight: 500 }}
+                            >
+                              {latestRun?.branch || repo.defaultBranch}
+                            </Typography>
+                          </Box>
+                          {latestRun?.commitSha && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#64748B',
+                                fontFamily: 'var(--font-geist-mono), monospace',
+                              }}
+                            >
+                              · {formatShortSha(latestRun.commitSha)}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Link>
                     </TableCell>
 
                     {/* Duration & Relative Time */}
-                    <TableCell
-                      component={Link}
-                      href={`/repositories/${repo.id}`}
-                      sx={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      {latestRun ? (
-                        <Box>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              display: 'block',
-                              color: '#94A3B8',
-                              fontFamily: 'var(--font-geist-mono), monospace',
-                            }}
-                          >
-                            {formatDuration(latestRun.startedAt, latestRun.completedAt, latestRun.durationSeconds)}
-                          </Typography>
+                    <TableCell>
+                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                        {latestRun ? (
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                display: 'block',
+                                color: '#94A3B8',
+                                fontFamily: 'var(--font-geist-mono), monospace',
+                              }}
+                            >
+                              {formatDuration(latestRun.startedAt, latestRun.completedAt, latestRun.durationSeconds)}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>
+                              {formatRelativeTime(latestRun.createdAt)}
+                            </Typography>
+                          </Box>
+                        ) : (
                           <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {formatRelativeTime(latestRun.createdAt)}
+                            —
                           </Typography>
-                        </Box>
-                      ) : (
-                        <Typography variant="caption" sx={{ color: '#64748B' }}>
-                          —
-                        </Typography>
-                      )}
+                        )}
+                      </Link>
                     </TableCell>
 
                     {/* Action buttons */}
