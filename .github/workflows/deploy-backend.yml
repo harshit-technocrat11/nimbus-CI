@@ -41,16 +41,15 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
           envs: GITHUB_TOKEN,GITHUB_REPO
           script: |
             set -e
             echo "🚀 [1/5] Setting up environment paths..."
-            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.local/share/pnpm:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.local/share/pnpm:$PATH"
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
             echo "📥 [2/5] Syncing latest code on EC2..."
             mkdir -p $HOME/nimbus_ci
@@ -71,11 +70,11 @@ jobs:
             pnpm --filter @nimbus-ci/db run db:push
 
             echo "🔄 [4/5] Restarting microservices..."
-            if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null; then
+            if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
               echo "Applying Kubernetes manifests via K3s..."
               kubectl apply -f infra/k8s/
               kubectl rollout restart deployment nimbus-worker || true
-            elif command -v docker &> /dev/null; then
+            elif command -v docker >/dev/null 2>&1; then
               echo "Rebuilding and starting Docker Compose services..."
               docker compose -f infra/docker-compose.yaml up -d --build --remove-orphans
               docker image prune -f || true
