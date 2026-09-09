@@ -1,9 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express, { type Express } from "express";
 import dotenv from "dotenv";
 import { logger } from "@nimbus-ci/logger";
 import { register, updateQueueMetrics } from "./metrics.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const app: Express = express();
 const PORT = Number(process.env.PORT || process.env.METRICS_PORT || 9090);

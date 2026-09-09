@@ -1,4 +1,10 @@
-import "dotenv/config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 import http from "http";
 import { logger } from "@nimbus-ci/logger";
 import { startConsumer } from "@nimbus-ci/kafka";

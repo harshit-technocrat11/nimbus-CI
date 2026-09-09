@@ -1,4 +1,4 @@
-name: Deploy Backend to EC2
+name: Deploy Backend to AWS EC2
 
 on:
   push:
@@ -21,6 +21,9 @@ concurrency:
   cancel-in-progress: false
 
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: Deploy Backend Infrastructure to EC2
@@ -28,21 +31,26 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository Code
         uses: actions/checkout@v4
 
-      - name: Execute Remote SSH Commands
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          envs: GITHUB_REPOSITORY
+          envs: GITHUB_TOKEN,GITHUB_REPO
           script: |
             set -e
             echo "🚀 [1/5] Setting up environment paths..."
-            export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:$HOME/.local/share/pnpm"
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.local/share/pnpm:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
             echo "📥 [2/5] Syncing latest code on EC2..."
             mkdir -p $HOME/nimbus_ci
@@ -51,10 +59,9 @@ jobs:
             if [ ! -d ".git" ]; then
               echo "Initializing git repository in existing folder..."
               git init
-              git remote add origin https://github.com/${{ github.repository }}.git
             fi
 
-            git remote set-url origin https://github.com/${{ github.repository }}.git
+            git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git 2>/dev/null || git remote add origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git
             git fetch origin main
             git reset --hard origin/main
 
@@ -64,11 +71,11 @@ jobs:
             pnpm --filter @nimbus-ci/db run db:push
 
             echo "🔄 [4/5] Restarting microservices..."
-            if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
+            if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null; then
               echo "Applying Kubernetes manifests via K3s..."
               kubectl apply -f infra/k8s/
               kubectl rollout restart deployment nimbus-worker || true
-            elif command -v docker >/dev/null 2>&1; then
+            elif command -v docker &> /dev/null; then
               echo "Rebuilding and starting Docker Compose services..."
               docker compose -f infra/docker-compose.yaml up -d --build --remove-orphans
               docker image prune -f || true
