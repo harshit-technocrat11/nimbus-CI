@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nimbus-streamer
+  labels:
+    app: nimbus-streamer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nimbus-streamer
+  template:
+    metadata:
+      labels:
+        app: nimbus-streamer
+    spec:
+      containers:
+        - name: streamer
+          image: nimbus-ci-streamer:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-ws
+              containerPort: 8001
+          env:
+            - name: PORT
+              value: "8001"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nimbus-secrets
+                  key: DATABASE_URL
+                  optional: true
+            - name: KAFKA_BROKERS
+              valueFrom:
+                secretKeyRef:
+                  name: nimbus-secrets
+                  key: KAFKA_BROKERS
+                  optional: true
+            - name: KAFKA_CLIENT_ID
+              value: "nimbus-streamer"
+            - name: KAFKA_LOGS_TOPIC
+              value: "ci.job.logs"
+            - name: KAFKA_SSL
+              value: "true"
+            - name: KAFKA_SASL_MECHANISM
+              value: "scram-sha-256"
+            - name: KAFKA_SASL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: nimbus-secrets
+                  key: KAFKA_SASL_USERNAME
+                  optional: true
+            - name: KAFKA_SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nimbus-secrets
+                  key: KAFKA_SASL_PASSWORD
+                  optional: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nimbus-streamer
+  labels:
+    app: nimbus-streamer
+spec:
+  type: ClusterIP
+  selector:
+    app: nimbus-streamer
+  ports:
+    - name: http-ws
+      port: 8001
+      targetPort: 8001

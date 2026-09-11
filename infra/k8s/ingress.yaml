@@ -14,3 +14,10 @@ spec:
                 name: nimbus-api
                 port:
                   number: 8000
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: nimbus-streamer
+                port:
+                  number: 8001
