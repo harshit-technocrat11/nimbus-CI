@@ -69,11 +69,18 @@ jobs:
             pnpm --filter @nimbus-ci/db run db:generate
             pnpm --filter @nimbus-ci/db run db:push
 
-            echo "🔄 [4/5] Restarting microservices..."
+            echo "🔄 [4/5] Building & deploying microservices..."
             if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
-              echo "Applying Kubernetes manifests via K3s..."
+              echo "🔨 Building Docker images and importing into K3s containerd..."
+              for svc in api worker streamer metrics; do
+                echo "📦 Processing nimbus-$svc..."
+                docker build -t nimbus-ci-$svc:latest -f infra/docker/Dockerfile.$svc .
+                docker save nimbus-ci-$svc:latest | sudo k3s ctr -n k8s.io images import -
+              done
+
+              echo "🚀 Applying Kubernetes manifests..."
               kubectl apply -f infra/k8s/
-              kubectl rollout restart deployment nimbus-worker || true
+              kubectl rollout restart deployment nimbus-api nimbus-worker nimbus-streamer nimbus-metrics || true
             elif command -v docker >/dev/null 2>&1; then
               echo "Rebuilding and starting Docker Compose services..."
               docker compose -f infra/docker-compose.yaml up -d --build --remove-orphans
@@ -81,4 +88,8 @@ jobs:
             fi
 
             echo "✅ [5/5] Deployment completed successfully!"
-            docker ps
+            if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
+              kubectl get pods -o wide
+            else
+              docker ps
+            fi
