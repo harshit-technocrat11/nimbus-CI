@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nimbus-api
+  labels:
+    app: nimbus-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nimbus-api
+  template:
+    metadata:
+      labels:
+        app: nimbus-api
+    spec:
+      containers:
+        - name: api
+          image: nimbus-ci-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "8000"
+            - name: REDIS_HOST
+              value: "host.docker.internal"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nimbus-secrets
+                  key: DATABASE_URL
+                  optional: false
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+# network proxy , manages the pods labelled app: nimbus-api
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nimbus-api
+  labels:
+    app: nimbus-api
+spec:
+  type: ClusterIP
+  selector:
+    app: nimbus-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
