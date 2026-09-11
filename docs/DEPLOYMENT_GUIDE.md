@@ -204,10 +204,12 @@ kubectl apply -f infra/k8s/keda/
 kubectl get pods
 ```
 
+> For NGINX Ingress Controller installation and routing details, see [INGRESS_SETUP.md](./INGRESS_SETUP.md).
+
 ### Verify Endpoints:
 ```bash
-# Test API Health
-curl http://localhost:8000/api/v1/health || curl http://localhost:8000/repositories
+# Test API Health (via Ingress port 80 or local port 8000)
+curl http://localhost/health || curl http://localhost:8000/health
 
 # Test Streamer Health
 curl http://localhost:8001/health
