@@ -65,6 +65,13 @@ jobs:
             git reset --hard origin/main
 
             echo "📦 [3/5] Installing dependencies & syncing database..."
+            if ! command -v python3 >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
+              echo "🛠️ Installing native build prerequisites (python3, make, g++, build-essential)..."
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq python3 make g++ build-essential
+            fi
+            export PYTHON=$(command -v python3)
+
             pnpm install --frozen-lockfile
             pnpm --filter @nimbus-ci/db run db:generate
             pnpm --filter @nimbus-ci/db run db:push

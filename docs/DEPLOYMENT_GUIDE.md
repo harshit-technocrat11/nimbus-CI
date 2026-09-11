@@ -100,7 +100,7 @@ Once connected to your Ubuntu VM, run these commands to install the required too
 ### A. Update System Packages
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl git build-essential ufw
+sudo apt install -y curl git build-essential python3 make g++ ufw
 ```
 
 ### B. Install Node.js 22 & PNPM
