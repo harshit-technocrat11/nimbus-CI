@@ -1,16 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import Tooltip from '@mui/material/Tooltip';
-import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Terminal,
   Search,
@@ -21,10 +11,14 @@ import {
   ArrowDown,
   Clock,
   Radio,
+  Check,
 } from 'lucide-react';
-import { JobLog, JobStatus } from '../../types/ci';
-import { useWorkflowStream } from '../../hooks/useWorkflowStream';
-import { copyToClipboard } from '../../lib/utils';
+import { JobLog, JobStatus } from '@/types/ci';
+import { useWorkflowStream } from '@/hooks/useWorkflowStream';
+import { copyToClipboard } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 interface LogViewerProps {
   jobId?: string;
@@ -45,7 +39,7 @@ export function LogViewer({
 }: LogViewerProps) {
   const {
     logs,
-    currentStatus,
+    connectionStatus,
     isFollowing,
     resumeFollow,
     logsContainerRef,
@@ -58,9 +52,9 @@ export function LogViewer({
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [copiedToast, setCopiedToast] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Filter logs by search query
   const filteredLogs = useMemo(() => {
@@ -70,356 +64,202 @@ export function LogViewer({
   }, [logs, searchQuery]);
 
   const handleCopyLogs = async () => {
-    const rawText = logs.map((l) => `${showTimestamps ? `[${new Date(l.createdAt).toLocaleTimeString()}] ` : ''}${l.message}`).join('\n');
+    const rawText = logs
+      .map(
+        (l) =>
+          `${showTimestamps ? `[${new Date(l.createdAt).toLocaleTimeString()}] ` : ''}${l.message}`
+      )
+      .join('\n');
     const success = await copyToClipboard(rawText);
-    if (success) setCopiedToast(true);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDownloadLogs = () => {
-    const rawText = logs.map((l) => `${showTimestamps ? `[${new Date(l.createdAt).toLocaleTimeString()}] ` : ''}${l.message}`).join('\n');
+    const rawText = logs
+      .map(
+        (l) =>
+          `${showTimestamps ? `[${new Date(l.createdAt).toLocaleTimeString()}] ` : ''}${l.message}`
+      )
+      .join('\n');
     const blob = new Blob([rawText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nimbus-job-${jobId || 'log'}.log`;
+    link.download = `nimbus-job-${jobName || jobId || 'log'}.log`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <Paper
-      sx={{
-        borderRadius: 2,
-        overflow: 'hidden',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backgroundColor: '#070A0F',
-        display: 'flex',
-        flexDirection: 'column',
-        height: isFullscreen ? '90vh' : 540,
-        position: isFullscreen ? 'fixed' : 'relative',
-        top: isFullscreen ? '5vh' : 'auto',
-        left: isFullscreen ? '5vw' : 'auto',
-        width: isFullscreen ? '90vw' : '100%',
-        zIndex: isFullscreen ? 1300 : 'auto',
-        boxShadow: isFullscreen ? '0 25px 50px -12px rgba(0, 0, 0, 0.85)' : 'none',
-      }}
+    <div
+      className={`rounded-lg border border-border bg-[#04070D] overflow-hidden flex flex-col font-mono text-xs shadow-md transition-all ${
+        isFullscreen
+          ? 'fixed inset-4 z-50 h-[calc(100vh-2rem)]'
+          : 'relative h-[520px]'
+      }`}
     >
       {/* Terminal Toolbar */}
-      <Box
-        sx={{
-          py: 1,
-          px: 2,
-          backgroundColor: '#0E1219',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 1.5,
-        }}
-      >
-        {/* Left: Terminal Title & Live State */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#94A3B8' }}>
-            <Terminal size={15} color="#3B82F6" />
-            <Typography
-              variant="body2"
-              sx={{
-                fontFamily: 'var(--font-geist-mono), monospace',
-                fontWeight: 600,
-                color: '#F8FAFC',
-                fontSize: '0.8125rem',
-              }}
-            >
-              {jobName ? `Job Terminal: ${jobName}` : 'Execution Logs'}
-            </Typography>
-          </Box>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 border-b border-border/80 bg-[#070C15] select-none">
+        {/* Left: Job Info & Connection indicator */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 text-foreground font-semibold">
+            <Terminal size={14} className="text-primary" />
+            <span>{jobName || 'job-logs'}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60 text-[10px]">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-emerald-400 animate-pulse'
+                  : connectionStatus === 'reconnecting'
+                  ? 'bg-amber-400 animate-ping'
+                  : 'bg-slate-500'
+              }`}
+            />
+            <span className="capitalize text-muted-foreground">
+              {connectionStatus === 'connected'
+                ? 'Live WebSocket'
+                : connectionStatus}
+            </span>
+          </div>
 
           {runnerName && (
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#64748B',
-                fontFamily: 'var(--font-geist-mono), monospace',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                px: 1,
-                py: 0.2,
-                borderRadius: '4px',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-              }}
-            >
-              {runnerName}
-            </Typography>
+            <span className="text-[10px] text-muted-foreground hidden md:inline">
+              runner: {runnerName}
+            </span>
           )}
+        </div>
 
-          {currentStatus === 'RUNNING' && (
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.5,
-                color: '#10B981',
-                fontSize: '0.6875rem',
-                fontFamily: 'var(--font-geist-mono), monospace',
-              }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981',
-                  animation: 'pulse 1.5s infinite',
-                }}
-              />
-              STREAMING
-            </Box>
-          )}
-        </Box>
+        {/* Right: Actions & Search */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="relative w-36 sm:w-44">
+            <Search
+              size={12}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search logs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-6 pl-6 pr-2 rounded bg-secondary/40 border border-border/70 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary font-mono"
+            />
+          </div>
 
-        {/* Right: Search, Timestamps, Copy, Fullscreen Controls */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Search bar inside logs */}
-          <TextField
-            size="small"
-            placeholder="Search logs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              width: { xs: 130, sm: 180 },
-              '& .MuiInputBase-root': {
-                height: 28,
-                fontSize: '0.75rem',
-                backgroundColor: '#070A0F',
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={12} color="#64748B" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setShowTimestamps(!showTimestamps)}
+            title={showTimestamps ? 'Hide timestamps' : 'Show timestamps'}
+            className={`h-6 w-6 ${showTimestamps ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <Clock size={12} />
+          </Button>
 
-          {/* Timestamps Toggle */}
-          <Tooltip title={showTimestamps ? 'Hide timestamps' : 'Show timestamps'}>
-            <IconButton
-              size="small"
-              onClick={() => setShowTimestamps(!showTimestamps)}
-              sx={{
-                color: showTimestamps ? '#60A5FA' : '#64748B',
-                p: 0.6,
-                backgroundColor: showTimestamps ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-              }}
-            >
-              <Clock size={14} />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopyLogs}
+            title="Copy logs"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          >
+            {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+          </Button>
 
-          {/* Copy Button */}
-          <Tooltip title="Copy all logs">
-            <IconButton size="small" onClick={handleCopyLogs} sx={{ color: '#94A3B8', p: 0.6 }}>
-              <Copy size={14} />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleDownloadLogs}
+            title="Download log file"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          >
+            <Download size={12} />
+          </Button>
 
-          {/* Download Button */}
-          <Tooltip title="Download .log file">
-            <IconButton size="small" onClick={handleDownloadLogs} sx={{ color: '#94A3B8', p: 0.6 }}>
-              <Download size={14} />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            title={isFullscreen ? 'Exit full screen' : 'Expand full screen'}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          >
+            {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+          </Button>
+        </div>
+      </div>
 
-          {/* Fullscreen Toggle */}
-          <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
-            <IconButton
-              size="small"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              sx={{ color: '#94A3B8', p: 0.6 }}
-            >
-              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
-
-      {/* Terminal Content Body */}
-      <Box
+      {/* Terminal Viewport */}
+      <div
         ref={logsContainerRef}
         onScroll={handleScroll}
-        sx={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'auto',
-          p: 2,
-          fontFamily: 'var(--font-geist-mono), "JetBrains Mono", monospace',
-          fontSize: '0.8125rem',
-          lineHeight: 1.65,
-          color: '#E2E8F0',
-          position: 'relative',
-        }}
+        className="flex-1 overflow-y-auto overflow-x-auto p-3 space-y-0.5 text-left select-text bg-[#04070D]"
       >
         {filteredLogs.length === 0 ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#64748B',
-              textAlign: 'center',
-            }}
-          >
-            <Radio size={24} style={{ marginBottom: 8, opacity: 0.6 }} />
-            <Typography variant="body2" sx={{ fontFamily: 'inherit', color: '#94A3B8' }}>
-              {searchQuery ? 'No matching log entries found.' : 'Waiting for logs...'}
-            </Typography>
-            <Typography variant="caption" sx={{ fontFamily: 'inherit', color: '#64748B', mt: 0.5 }}>
-              {!searchQuery && 'The runner has not produced output yet.'}
-            </Typography>
-          </Box>
+          <div className="py-16 text-center text-muted-foreground/60 text-xs">
+            {searchQuery
+              ? `No logs matching "${searchQuery}"`
+              : 'Waiting for runner logs...'}
+          </div>
         ) : (
-          filteredLogs.map((log, idx) => {
-            const isStderr = log.stream === 'STDERR' || log.message.toLowerCase().includes('fail') || log.message.toLowerCase().includes('error');
-            const isCommand = log.message.trim().startsWith('$');
-            const isSuccess = log.message.includes('✔') || log.message.includes('PASS') || log.message.includes('successfully');
+          filteredLogs.map((log, index) => {
+            const isStderr =
+              log.stream === 'STDERR' ||
+              log.message.includes('Error:') ||
+              log.message.includes('FATAL') ||
+              log.message.includes('failed');
 
-            const timeFormatted = new Date(log.createdAt).toLocaleTimeString('en-US', {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            });
+            const isCommand = log.message.startsWith('$') || log.message.startsWith('>');
 
             return (
-              <Box
-                key={log.id || idx}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 1.5,
-                  py: 0.15,
-                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.02)' },
-                }}
+              <div
+                key={log.id || index}
+                className={`flex items-start gap-3 leading-relaxed hover:bg-white/[0.02] px-1 rounded transition-colors ${
+                  isStderr
+                    ? 'text-rose-400 font-medium'
+                    : isCommand
+                    ? 'text-sky-300 font-semibold'
+                    : 'text-slate-300'
+                }`}
               >
                 {/* Line number */}
-                <Typography
-                  component="span"
-                  sx={{
-                    color: '#4B5563',
-                    minWidth: 32,
-                    textAlign: 'right',
-                    userSelect: 'none',
-                    fontSize: '0.75rem',
-                    lineHeight: 'inherit',
-                  }}
-                >
-                  {log.sequence || idx + 1}
-                </Typography>
+                <span className="select-none text-[10px] text-muted-foreground/40 w-8 text-right shrink-0 pt-[1px]">
+                  {String(index + 1).padStart(4, '0')}
+                </span>
 
                 {/* Optional Timestamp */}
                 {showTimestamps && (
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: '#475569',
-                      minWidth: 64,
-                      userSelect: 'none',
-                      fontSize: '0.75rem',
-                      lineHeight: 'inherit',
-                    }}
-                  >
-                    {timeFormatted}
-                  </Typography>
+                  <span className="select-none text-[10px] text-muted-foreground/50 shrink-0 pt-[1px]">
+                    [{new Date(log.createdAt).toLocaleTimeString()}]
+                  </span>
                 )}
 
-                {/* Stream Tag */}
-                {log.stream === 'STDERR' && (
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: '#EF4444',
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      userSelect: 'none',
-                    }}
-                  >
-                    [stderr]
-                  </Typography>
-                )}
-
-                {/* Log Line Message */}
-                <Typography
-                  component="span"
-                  sx={{
-                    flex: 1,
-                    fontFamily: 'inherit',
-                    fontSize: 'inherit',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    color: isStderr
-                      ? '#F87171'
-                      : isCommand
-                      ? '#60A5FA'
-                      : isSuccess
-                      ? '#34D399'
-                      : '#E2E8F0',
-                    fontWeight: isCommand ? 600 : 400,
-                  }}
-                >
+                {/* Message Body */}
+                <span className="whitespace-pre-wrap break-all flex-1">
                   {log.message}
-                </Typography>
-              </Box>
+                </span>
+              </div>
             );
           })
         )}
-      </Box>
+      </div>
 
-      {/* Floating Follow Button when scrolled away */}
-      {!isFollowing && logs.length > 0 && (
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            right: 20,
-            zIndex: 10,
-          }}
-        >
+      {/* Floating Resume Auto-Scroll Button */}
+      {!isFollowing && isLive && (
+        <div className="absolute bottom-4 right-4 z-10">
           <Button
-            variant="contained"
-            size="small"
+            size="sm"
             onClick={resumeFollow}
-            startIcon={<ArrowDown size={13} />}
-            sx={{
-              backgroundColor: '#1E293B',
-              color: '#F8FAFC',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5)',
-              fontSize: '0.75rem',
-              py: 0.5,
-              px: 1.5,
-              '&:hover': { backgroundColor: '#334155' },
-            }}
+            className="gap-1.5 h-7 text-xs bg-primary text-primary-foreground shadow-lg animate-bounce"
           >
-            Follow Logs
+            <ArrowDown size={12} />
+            <span>Follow output</span>
           </Button>
-        </Box>
+        </div>
       )}
-
-      {/* Toast Notification */}
-      <Snackbar
-        open={copiedToast}
-        autoHideDuration={2500}
-        onClose={() => setCopiedToast(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" sx={{ py: 0.5, fontSize: '0.8125rem' }}>
-          Logs copied to clipboard
-        </Alert>
-      </Snackbar>
-    </Paper>
+    </div>
   );
 }

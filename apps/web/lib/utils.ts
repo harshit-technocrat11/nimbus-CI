@@ -62,3 +62,25 @@ export function parseRepoInfo(url: string): { owner: string; name: string } {
   return { owner: 'user', name: 'repo' };
 }
 
+export function formatFullDateTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return '—';
+  try {
+    return new Date(dateInput).toLocaleString();
+  } catch {
+    return '—';
+  }
+}
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator?.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+

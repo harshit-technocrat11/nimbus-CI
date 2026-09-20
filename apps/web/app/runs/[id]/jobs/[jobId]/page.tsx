@@ -1,20 +1,17 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Card from '@mui/material/Card';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import { ChevronLeft, Server, Play, Clock, Terminal } from 'lucide-react';
 import Link from 'next/link';
-import { Job, WorkflowRun } from '../../../../../types/ci';
-import { api } from '../../../../../lib/api';
-import { StatusBadge } from '../../../../../components/common/StatusBadge';
-import { LogViewer } from '../../../../../components/logs/LogViewer';
-import { CardSkeletonList } from '../../../../../components/common/LoadingSkeleton';
-import { ErrorState } from '../../../../../components/common/ErrorState';
-import { formatDuration, formatRelativeTime } from '../../../../../lib/utils';
+import { ChevronLeft, Server, Clock, Terminal } from 'lucide-react';
+import { Job, WorkflowRun } from '@/types/ci';
+import { api } from '@/lib/api';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { LogViewer } from '@/components/logs/LogViewer';
+import { CardSkeletonList } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { formatDuration, formatRelativeTime } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function JobDetailPage({
   params,
@@ -55,141 +52,76 @@ export default function JobDetailPage({
 
   if (isLoading) {
     return (
-      <Box sx={{ py: 3 }}>
+      <div className="py-4 space-y-4">
+        <div className="h-6 w-32 bg-secondary/40 rounded animate-pulse" />
         <CardSkeletonList count={2} />
-      </Box>
+      </div>
     );
   }
 
-  if (error || !job) {
-    return <ErrorState message={error || 'Job not found'} onRetry={fetchJobData} />;
+  if (error || !run || !job) {
+    return (
+      <ErrorState
+        message={error || 'Job not found'}
+        onRetry={fetchJobData}
+      />
+    );
   }
 
-  const runnerName = job.runner?.name || job.runnerId || 'worker-01';
+  const runnerName = job.runner?.name || job.runnerId || 'docker-runner';
 
   return (
-    <Box>
-      {/* Back to Run link */}
-      <Box sx={{ mb: 2 }}>
-        <Link
-          href={`/runs/${runId}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            textDecoration: 'none',
-            color: '#94A3B8',
-            fontSize: '0.8125rem',
-          }}
-        >
-          <ChevronLeft size={14} />
-          Back to Run #{runId.replace('run-', '')}
-        </Link>
-      </Box>
-
-      {/* Job Header Profile */}
-      <Card
-        sx={{
-          p: 3,
-          backgroundColor: '#0F131C',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 2,
-          mb: 3,
-        }}
+    <div className="space-y-5">
+      {/* Back Link to Run */}
+      <Link
+        href={`/runs/${runId}`}
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            gap: 2,
-            mb: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography
-              variant="h1"
-              sx={{
-                fontSize: '1.35rem',
-                fontWeight: 700,
-                fontFamily: 'var(--font-geist-mono), monospace',
-              }}
-            >
-              {job.name}
-            </Typography>
-            <StatusBadge status={job.status} size="medium" />
-          </Box>
+        <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+        <span>Back to Run #{runId.replace('run-', '')}</span>
+      </Link>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#94A3B8' }}>
-              <Server size={13} color="#64748B" />
-              <Typography
-                variant="caption"
-                sx={{ fontFamily: 'var(--font-geist-mono), monospace', color: '#CBD5E1' }}
-              >
-                {runnerName}
-              </Typography>
-            </Box>
+      {/* Job Header Card */}
+      <Card className="p-5 bg-card/60 border-border/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <Terminal size={18} className="text-primary" />
+              <h1 className="text-base font-semibold text-foreground font-mono">
+                {job.name}
+              </h1>
+              <StatusBadge status={job.status} size="small" />
+            </div>
 
-            <Typography
-              variant="caption"
-              sx={{
-                fontFamily: 'var(--font-geist-mono), monospace',
-                color: '#94A3B8',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                px: 1,
-                py: 0.3,
-                borderRadius: '4px',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}
-            >
-              Duration: {formatDuration(job.startedAt, job.completedAt, job.durationSeconds)}
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Commands executed */}
-        {job.commands && job.commands.length > 0 && (
-          <Box
-            sx={{
-              pt: 2,
-              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              flexWrap: 'wrap',
-            }}
-          >
-            <Typography variant="caption" sx={{ color: '#64748B' }}>
-              Commands:
-            </Typography>
-            {job.commands.map((cmd, idx) => (
-              <Chip
-                key={idx}
-                label={cmd}
-                size="small"
-                sx={{
-                  fontFamily: 'var(--font-geist-mono), monospace',
-                  fontSize: '0.6875rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  color: '#94A3B8',
-                }}
-              />
-            ))}
-          </Box>
-        )}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+              <div className="flex items-center gap-1">
+                <Server size={12} className="text-muted-foreground" />
+                <span>{runnerName}</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Clock size={12} className="text-muted-foreground" />
+                <span>Duration: {formatDuration(job.startedAt, job.completedAt)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </Card>
 
       {/* Terminal Log Viewer */}
-      <LogViewer
-        jobId={job.id}
-        initialLogs={job.logs}
-        jobStatus={job.status}
-        jobName={job.name}
-        runnerName={runnerName}
-        isLive={job.status === 'RUNNING' || run?.status === 'RUNNING'}
-      />
-    </Box>
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">
+          Live Terminal Output
+        </h2>
+        <LogViewer
+          jobId={job.id}
+          initialLogs={job.logs}
+          jobStatus={job.status}
+          jobName={job.name}
+          runnerName={runnerName}
+          isLive={job.status === 'RUNNING' || run.status === 'RUNNING'}
+        />
+      </div>
+    </div>
   );
 }
