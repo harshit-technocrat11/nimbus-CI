@@ -42,45 +42,45 @@ export default function HomePage() {
     <div className="space-y-6">
       {/* Top 3 Minimal Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="p-4 bg-card/60 border-border/80 flex items-center justify-between">
+        <Card className="p-4 bg-[#161B22] border-[#30363D] flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-[#8B949E] uppercase tracking-wider">
               Connected Repos
             </p>
-            <p className="text-xl font-semibold text-foreground font-mono mt-0.5">
+            <p className="text-2xl font-bold text-[#F0F6FC] font-mono mt-0.5">
               {isLoading ? '—' : repositories.length}
             </p>
           </div>
-          <div className="p-2.5 rounded-md bg-primary/10 text-primary border border-primary/20">
-            <FolderGit2 size={16} />
+          <div className="p-2.5 rounded-md bg-[#21262D] text-[#58A6FF] border border-[#30363D]">
+            <FolderGit2 size={18} />
           </div>
         </Card>
 
-        <Card className="p-4 bg-card/60 border-border/80 flex items-center justify-between">
+        <Card className="p-4 bg-[#161B22] border-[#30363D] flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-[#8B949E] uppercase tracking-wider">
               Active Runs
             </p>
-            <p className="text-xl font-semibold text-foreground font-mono mt-0.5">
+            <p className="text-2xl font-bold text-[#F0F6FC] font-mono mt-0.5">
               {isLoading ? '—' : runningCount}
             </p>
           </div>
-          <div className="p-2.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Play size={16} />
+          <div className="p-2.5 rounded-md bg-amber-950/40 text-amber-400 border border-amber-800/40">
+            <Play size={18} />
           </div>
         </Card>
 
-        <Card className="p-4 bg-card/60 border-border/80 flex items-center justify-between">
+        <Card className="p-4 bg-[#161B22] border-[#30363D] flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-[#8B949E] uppercase tracking-wider">
               Workflows Tracked
             </p>
-            <p className="text-xl font-semibold text-foreground font-mono mt-0.5">
+            <p className="text-2xl font-bold text-[#F0F6FC] font-mono mt-0.5">
               {isLoading ? '—' : totalRuns || 3}
             </p>
           </div>
-          <div className="p-2.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <CheckCircle2 size={16} />
+          <div className="p-2.5 rounded-md bg-emerald-950/40 text-emerald-400 border border-emerald-800/40">
+            <CheckCircle2 size={18} />
           </div>
         </Card>
       </div>

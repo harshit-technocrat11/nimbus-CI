@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${sansFont.variable} ${monoFont.variable}`}>
+    <html lang="en" className={`${sansFont.variable} ${monoFont.variable}`}>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <AppShell>{children}</AppShell>
       </body>

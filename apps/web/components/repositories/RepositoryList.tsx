@@ -134,15 +134,15 @@ export function RepositoryList({
           }}
         />
       ) : (
-        <div className="rounded-lg border border-border bg-card/40 overflow-hidden shadow-xs">
+        <div className="rounded-lg border border-[#30363D] bg-[#0D1117] overflow-hidden">
           <Table>
-            <TableHeader className="bg-secondary/20">
-              <TableRow>
-                <TableHead className="w-[38%]">Repository</TableHead>
-                <TableHead className="w-[24%]">Latest Run</TableHead>
-                <TableHead className="w-[18%]">Commit / Branch</TableHead>
-                <TableHead className="w-[12%]">Activity</TableHead>
-                <TableHead className="w-[8%] text-right">Actions</TableHead>
+            <TableHeader className="bg-[#161B22]">
+              <TableRow className="hover:bg-transparent border-b border-[#30363D]">
+                <TableHead className="w-[38%] text-[#8B949E]">Repository</TableHead>
+                <TableHead className="w-[24%] text-[#8B949E]">Latest Run</TableHead>
+                <TableHead className="w-[18%] text-[#8B949E]">Commit / Branch</TableHead>
+                <TableHead className="w-[12%] text-[#8B949E]">Activity</TableHead>
+                <TableHead className="w-[8%] text-right text-[#8B949E]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

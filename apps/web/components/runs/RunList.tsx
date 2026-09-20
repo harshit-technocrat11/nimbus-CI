@@ -2,22 +2,26 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, GitBranch, PlaySquare, ChevronRight, FolderGit2 } from 'lucide-react';
+import {
+  Search,
+  GitBranch,
+  PlaySquare,
+  ChevronRight,
+  FolderGit2,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Circle,
+  Clock,
+  Calendar,
+  MoreHorizontal,
+} from 'lucide-react';
 import { WorkflowRun } from '@/types/ci';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { TriggerBadge } from '@/components/common/TriggerBadge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { formatDuration, formatRelativeTime, formatShortSha } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 
 interface RunListProps {
   runs: WorkflowRun[];
@@ -29,8 +33,8 @@ interface RunListProps {
 export function RunList({
   runs,
   showRepoColumn = true,
-  title,
-  subtitle,
+  title = 'All workflows',
+  subtitle = 'Showing runs from all workflows',
 }: RunListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUCCESS' | 'RUNNING' | 'FAILED' | 'QUEUED'>('ALL');
@@ -39,11 +43,13 @@ export function RunList({
     const repoName = run.workflow?.repository?.name || '';
     const branch = run.branch || '';
     const commit = run.commitSha || '';
+    const workflowName = run.workflow?.name || '';
 
     const matchesSearch =
       repoName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
       commit.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workflowName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       run.id.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
@@ -53,171 +59,175 @@ export function RunList({
 
   return (
     <div className="space-y-4">
-      {title && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-              <span>{title}</span>
-              <Badge variant="secondary" className="text-[11px] font-mono font-normal">
-                {runs.length}
-              </Badge>
-            </h1>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Filter Row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED', 'QUEUED'] as const).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setStatusFilter(filter)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                statusFilter === filter
-                  ? 'bg-secondary text-foreground border border-border'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              {filter === 'ALL' ? 'All Runs' : filter}
-            </button>
-          ))}
+      {/* GitHub Actions Header & Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1 border-b border-[#30363D]/60">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight text-[#F0F6FC]">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-xs text-[#8B949E] mt-0.5">{subtitle}</p>
+          )}
         </div>
 
-        <div className="relative w-full sm:w-64">
+        {/* Filter workflow runs search */}
+        <div className="relative w-full sm:w-72">
           <Search
-            size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            size={13}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B949E] pointer-events-none"
           />
           <Input
-            placeholder="Search runs..."
+            placeholder="Filter workflow runs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 text-xs bg-secondary/30"
+            className="pl-8 h-8 text-xs bg-[#0D1117] border-[#30363D] text-[#F0F6FC] placeholder:text-[#8B949E] focus:border-[#58A6FF]"
           />
         </div>
       </div>
 
-      {/* Runs Table */}
-      {filteredRuns.length === 0 ? (
-        <EmptyState
-          icon={<PlaySquare size={24} />}
-          title={searchQuery ? 'No workflow runs match filter' : 'No workflow runs recorded'}
-          description={
-            searchQuery
-              ? 'Try changing your search term or status filter'
-              : 'Trigger a workflow run or push code to a connected repository to start CI execution'
-          }
-        />
-      ) : (
-        <div className="rounded-lg border border-border bg-card/40 overflow-hidden shadow-xs">
-          <Table>
-            <TableHeader className="bg-secondary/20">
-              <TableRow>
-                <TableHead className="w-[15%]">Status</TableHead>
-                <TableHead className="w-[28%]">Workflow & Run</TableHead>
-                {showRepoColumn && <TableHead className="w-[22%]">Repository</TableHead>}
-                <TableHead className="w-[18%]">Branch / Commit</TableHead>
-                <TableHead className="w-[12%]">Duration & Time</TableHead>
-                <TableHead className="w-[5%] text-right"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRuns.map((run) => {
-                const repo = run.workflow?.repository;
-                return (
-                  <TableRow key={run.id} className="group hover:bg-secondary/30">
-                    {/* Status */}
-                    <TableCell>
-                      <Link href={`/runs/${run.id}`}>
-                        <StatusBadge status={run.status} size="small" />
+      {/* Workflow Run Card List (matching GitHub Actions screenshot) */}
+      <div className="rounded-md border border-[#30363D] bg-[#0D1117] overflow-hidden">
+        {/* Subheader summary & dropdown filters */}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#161B22] border-b border-[#30363D] text-xs text-[#8B949E]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#F0F6FC]">
+              {filteredRuns.length} workflow runs
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 text-[11px]">
+            {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED'] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setStatusFilter(filter)}
+                className={`transition-colors ${
+                  statusFilter === filter
+                    ? 'text-[#58A6FF] font-semibold'
+                    : 'text-[#8B949E] hover:text-[#F0F6FC]'
+                }`}
+              >
+                {filter === 'ALL' ? 'All' : filter.charAt(0) + filter.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Runs List Items */}
+        {filteredRuns.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={<PlaySquare size={24} />}
+              title={searchQuery ? 'No workflow runs match filter' : 'No workflow runs recorded'}
+              description={
+                searchQuery
+                  ? 'Try changing your search term or status filter'
+                  : 'Trigger a workflow run or push code to a connected repository to start CI execution'
+              }
+            />
+          </div>
+        ) : (
+          <div className="divide-y divide-[#30363D]/60">
+            {filteredRuns.map((run) => {
+              const repo = run.workflow?.repository;
+              const runDisplayNumber = run.id.replace('run-', '');
+              const commitSha = run.commitSha ? formatShortSha(run.commitSha) : null;
+              const workflowName = run.workflow?.name || 'Nimbus CI';
+
+              return (
+                <div
+                  key={run.id}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-[#161B22]/60 transition-colors group"
+                >
+                  {/* Left: Status Icon + Title + Metadata */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
+                    {/* Status Icon */}
+                    <div className="pt-0.5 shrink-0">
+                      {run.status === 'SUCCESS' ? (
+                        <CheckCircle2 size={16} className="text-[#3FB950] fill-[#3FB950]/15" />
+                      ) : run.status === 'FAILED' ? (
+                        <XCircle size={16} className="text-[#F85149] fill-[#F85149]/15" />
+                      ) : run.status === 'RUNNING' ? (
+                        <Loader2 size={16} className="text-[#58A6FF] animate-spin" />
+                      ) : (
+                        <Circle size={16} className="text-[#8B949E]" />
+                      )}
+                    </div>
+
+                    {/* Run Title & Subtitle */}
+                    <div className="min-w-0 space-y-0.5">
+                      <Link
+                        href={`/runs/${run.id}`}
+                        className="font-bold text-xs text-[#F0F6FC] hover:text-[#58A6FF] transition-colors truncate block"
+                      >
+                        {workflowName}
                       </Link>
-                    </TableCell>
 
-                    {/* Workflow Name & Run ID */}
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        <Link
-                          href={`/runs/${run.id}`}
-                          className="font-semibold text-xs text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
-                        >
-                          <span>{run.workflow?.name || 'CI Workflow'}</span>
-                          <span className="font-mono text-muted-foreground font-normal text-[11px]">
-                            #{run.id.replace('run-', '')}
-                          </span>
-                        </Link>
-                        <div className="flex items-center gap-2 text-[11px]">
-                          <TriggerBadge type={run.triggerType} />
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    {/* Repository Column (optional) */}
-                    {showRepoColumn && (
-                      <TableCell>
-                        {repo ? (
-                          <Link
-                            href={`/repositories/${repo.id}`}
-                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-                          >
-                            <FolderGit2 size={13} className="text-primary/70" />
-                            <span className="truncate max-w-[160px]">
-                              {repo.owner}/{repo.name}
+                      <div className="text-[11px] text-[#8B949E] flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          {workflowName} #{runDisplayNumber}:
+                        </span>
+                        {commitSha ? (
+                          <>
+                            <span>Commit</span>
+                            <span className="font-mono text-[#58A6FF] hover:underline">
+                              {commitSha}
                             </span>
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/40 font-mono">—</span>
+                          </>
+                        ) : null}
+                        {repo && (
+                          <span className="truncate">
+                            in {repo.owner}/{repo.name}
+                          </span>
                         )}
-                      </TableCell>
-                    )}
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Branch & Commit */}
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-[11px] font-mono text-foreground">
-                          <GitBranch size={11} className="text-muted-foreground" />
-                          <span>{run.branch}</span>
-                        </div>
-                        <span className="font-mono text-[10px] text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded border border-border/60">
-                          {formatShortSha(run.commitSha)}
+                  {/* Middle: Branch Badge */}
+                  {run.branch && (
+                    <div className="hidden md:flex items-center px-3">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#161B22] border border-[#30363D] text-[#58A6FF]">
+                        <GitBranch size={10} />
+                        <span>{run.branch}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Right: Date & Duration & More Menu */}
+                  <div className="flex items-center gap-4 text-xs text-[#8B949E] shrink-0 text-right">
+                    <div className="space-y-0.5 min-w-[90px]">
+                      <div className="flex items-center justify-end gap-1.5 text-[11px]">
+                        <Calendar size={11} className="text-[#8B949E]" />
+                        <span>{formatRelativeTime(run.createdAt)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-1.5 font-mono text-[11px]">
+                        <Clock size={11} className="text-[#8B949E]" />
+                        <span>
+                          {run.durationSeconds
+                            ? formatDuration(run.durationSeconds)
+                            : formatDuration(run.startedAt, run.completedAt)}
                         </span>
                       </div>
-                    </TableCell>
+                    </div>
 
-                    {/* Duration & Relative Time */}
-                    <TableCell>
-                      <div className="text-[11px] space-y-0.5">
-                        <p className="text-foreground font-mono text-[11px]">
-                          {formatDuration(run.startedAt, run.completedAt)}
-                        </p>
-                        <p className="text-muted-foreground text-[10px]">
-                          {formatRelativeTime(run.createdAt)}
-                        </p>
-                      </div>
-                    </TableCell>
-
-                    {/* Action */}
-                    <TableCell className="text-right">
-                      <Link href={`/runs/${run.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        >
-                          <ChevronRight size={14} />
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                    <Link href={`/runs/${run.id}`}>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-7 w-7 text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#30363D]/40"
+                      >
+                        <MoreHorizontal size={14} />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

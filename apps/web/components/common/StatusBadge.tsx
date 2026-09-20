@@ -32,55 +32,55 @@ export function StatusBadge({
 
   const iconSize = size === 'small' ? 12 : 14;
 
-  let badgeClasses = 'bg-slate-800/40 text-slate-400 border-slate-700/50';
+  let badgeClasses = 'bg-[#21262D] text-[#8B949E] border-[#30363D]';
   let label = normalized || 'UNKNOWN';
   let icon: React.ReactNode = <Clock size={iconSize} />;
 
   switch (normalized) {
     case 'SUCCESS':
-      badgeClasses = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      badgeClasses = 'bg-[#238636]/15 text-[#3FB950] border-[#238636]/40';
       icon = <CheckCircle2 size={iconSize} className="stroke-[2.5]" />;
       label = 'SUCCESS';
       break;
 
     case 'RUNNING':
-      badgeClasses = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      badgeClasses = 'bg-[#1f6feb]/15 text-[#58A6FF] border-[#1f6feb]/40';
       icon = <Loader2 size={iconSize} className="animate-spin stroke-[2.5]" />;
       label = 'RUNNING';
       break;
 
     case 'FAILED':
-      badgeClasses = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+      badgeClasses = 'bg-[#da3633]/15 text-[#F85149] border-[#da3633]/40';
       icon = <XCircle size={iconSize} className="stroke-[2.5]" />;
       label = 'FAILED';
       break;
 
     case 'QUEUED':
-      badgeClasses = 'bg-slate-800/60 text-slate-400 border-slate-700/60';
+      badgeClasses = 'bg-[#21262D] text-[#8B949E] border-[#30363D]';
       icon = <Clock size={iconSize} />;
       label = 'QUEUED';
       break;
 
     case 'CANCELLED':
-      badgeClasses = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+      badgeClasses = 'bg-[#8957e5]/15 text-[#bc8cff] border-[#8957e5]/40';
       icon = <MinusCircle size={iconSize} />;
       label = 'CANCELLED';
       break;
 
     case 'ONLINE':
-      badgeClasses = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      badgeClasses = 'bg-[#238636]/15 text-[#3FB950] border-[#238636]/40';
       icon = <Radio size={iconSize} />;
       label = 'ONLINE';
       break;
 
     case 'BUSY':
-      badgeClasses = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      badgeClasses = 'bg-[#d29922]/15 text-[#e3b341] border-[#d29922]/40';
       icon = <Loader2 size={iconSize} className="animate-spin" />;
       label = 'BUSY';
       break;
 
     case 'OFFLINE':
-      badgeClasses = 'bg-slate-800/40 text-slate-500 border-slate-700/40';
+      badgeClasses = 'bg-[#21262D] text-[#8B949E] border-[#30363D]';
       icon = <PowerOff size={iconSize} />;
       label = 'OFFLINE';
       break;
@@ -89,14 +89,14 @@ export function StatusBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border font-mono font-medium select-none transition-colors',
+        'inline-flex items-center gap-1.5 rounded-md border font-mono font-medium select-none transition-colors shadow-2xs',
         size === 'small' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs',
         badgeClasses,
         className
       )}
     >
       {icon}
-      {showLabel && <span className="tracking-wide">{label}</span>}
+      {showLabel && <span className="tracking-wide font-semibold">{label}</span>}
     </div>
   );
 }

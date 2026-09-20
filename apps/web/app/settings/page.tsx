@@ -1,23 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Card from '@mui/material/Card';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import Chip from '@mui/material/Chip';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import { Settings, Server, Key, Bell, Shield, Check, Terminal } from 'lucide-react';
+import { Server, Key, Terminal, Check } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   const [apiUrl, setApiUrl] = useState(
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
   );
-  const [streamerUrl, setStreamerUrl] = useState('ws://localhost:5001');
-  const [autoFollow, setAutoFollow] = useState(true);
+  const [streamerUrl, setStreamerUrl] = useState(
+    process.env.NEXT_PUBLIC_STREAMER_URL || 'ws://localhost:8001/ws'
+  );
   const [savedToast, setSavedToast] = useState(false);
 
   const handleSave = () => {
@@ -26,133 +21,94 @@ export default function SettingsPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 800 }}>
+    <div className="max-w-3xl space-y-6">
       {/* Header Bar */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h1" sx={{ fontSize: '1.5rem', fontWeight: 700, mb: 0.5 }}>
+      <div>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
           Settings & Environment
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-          Configure API endpoints, WebSocket streamers, and UI preferences for Nimbus CI.
-        </Typography>
-      </Box>
+        </h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Configure API endpoints, WebSocket log streamers, and system integration settings
+        </p>
+      </div>
 
       {savedToast && (
-        <Alert severity="success" sx={{ mb: 3, py: 0.5, fontSize: '0.8125rem' }}>
-          Settings saved successfully!
-        </Alert>
+        <div className="p-3 rounded-md bg-emerald-950/20 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+          <Check size={14} />
+          <span>Settings saved successfully!</span>
+        </div>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div className="space-y-4">
         {/* Backend Endpoints */}
-        <Card sx={{ p: 3, backgroundColor: '#0E1219' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 2 }}>
-            <Server size={18} color="#3B82F6" />
-            <Typography variant="h3" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-              Backend Service Connections
-            </Typography>
-          </Box>
+        <Card className="p-5 bg-[#161B22] border-[#30363D] space-y-4">
+          <div className="flex items-center gap-2 text-[#F0F6FC] font-semibold text-sm">
+            <Server size={16} className="text-[#58A6FF]" />
+            <span>Backend Service Connections</span>
+          </div>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <Typography variant="caption" sx={{ color: '#94A3B8', mb: 0.5, display: 'block' }}>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[#8B949E]">
                 Nimbus API Endpoint
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
+              </label>
+              <Input
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
-                InputProps={{
-                  sx: { fontFamily: 'var(--font-geist-mono), monospace', fontSize: '0.8125rem' },
-                }}
+                className="font-mono text-xs bg-[#0D1117] border-[#30363D] text-[#F0F6FC]"
               />
-            </Box>
+              <p className="text-[11px] text-[#8B949E]">
+                Default: http://localhost:8000/api
+              </p>
+            </div>
 
-            <Box>
-              <Typography variant="caption" sx={{ color: '#94A3B8', mb: 0.5, display: 'block' }}>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[#8B949E]">
                 WebSocket Log Streamer Endpoint
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
+              </label>
+              <Input
                 value={streamerUrl}
                 onChange={(e) => setStreamerUrl(e.target.value)}
-                InputProps={{
-                  sx: { fontFamily: 'var(--font-geist-mono), monospace', fontSize: '0.8125rem' },
-                }}
+                className="font-mono text-xs bg-[#0D1117] border-[#30363D] text-[#F0F6FC]"
               />
-            </Box>
-          </Box>
+              <p className="text-[11px] text-[#8B949E]">
+                Default: ws://localhost:8001/ws
+              </p>
+            </div>
+          </div>
         </Card>
 
         {/* GitHub Webhook Info */}
-        <Card sx={{ p: 3, backgroundColor: '#0E1219' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}>
-            <Key size={18} color="#F59E0B" />
-            <Typography variant="h3" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-              GitHub Webhook Integration
-            </Typography>
-          </Box>
+        <Card className="p-5 bg-[#161B22] border-[#30363D] space-y-3">
+          <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
+            <Key size={16} className="text-amber-400" />
+            <span>GitHub Webhook & App Integration</span>
+          </div>
 
-          <Typography variant="body2" sx={{ color: '#94A3B8', mb: 2 }}>
-            Configure your GitHub repository Webhook URL to automatically trigger Nimbus CI on every push:
-          </Typography>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Configure your GitHub repository webhook payload URL to receive automated push events:
+          </p>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 1,
-              backgroundColor: '#070A0F',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              fontFamily: 'var(--font-geist-mono), monospace',
-              fontSize: '0.8125rem',
-              color: '#60A5FA',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <span>http://your-nimbus-domain.com/api/webhooks/github</span>
-            <Chip label="POST" size="small" sx={{ height: 20, fontSize: '0.6875rem', fontWeight: 600 }} />
-          </Box>
+          <div className="p-2.5 rounded-md bg-[#04070D] border border-border/60 font-mono text-xs text-foreground flex items-center justify-between">
+            <span>http://localhost:8000/webhooks/github</span>
+            <span className="text-[10px] text-muted-foreground">POST</span>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground space-y-1 pt-1">
+            <p>• Content type: <code className="text-foreground">application/json</code></p>
+            <p>• Secret: Match your configured <code className="text-foreground">GITHUB_WEBHOOK_SECRET</code></p>
+            <p>• Events: Just the <code className="text-foreground">push</code> event</p>
+          </div>
         </Card>
 
-        {/* Terminal Preferences */}
-        <Card sx={{ p: 3, backgroundColor: '#0E1219' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}>
-            <Terminal size={18} color="#10B981" />
-            <Typography variant="h3" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-              Terminal & Log Preferences
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={autoFollow}
-                  onChange={(e) => setAutoFollow(e.target.checked)}
-                  color="primary"
-                  size="small"
-                />
-              }
-              label={
-                <Typography variant="body2" sx={{ color: '#CBD5E1' }}>
-                  Auto-follow active streaming logs by default
-                </Typography>
-              }
-            />
-          </Box>
-        </Card>
-
-        {/* Save Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="primary" onClick={handleSave} startIcon={<Check size={16} />}>
-            Save Preferences
+        {/* Action button */}
+        <div className="flex justify-end">
+          <Button size="sm" onClick={handleSave} className="gap-1.5">
+            <Check size={13} />
+            <span>Save settings</span>
           </Button>
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

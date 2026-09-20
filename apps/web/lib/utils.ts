@@ -31,12 +31,19 @@ export function formatRelativeTime(dateInput?: string | Date | null): string {
 }
 
 export function formatDuration(
-  startInput?: string | Date | null,
+  startOrSeconds?: string | Date | number | null,
   endInput?: string | Date | null
 ): string {
-  if (!startInput) return '—';
+  if (startOrSeconds === null || startOrSeconds === undefined) return '—';
+  if (typeof startOrSeconds === 'number') {
+    const diffSec = Math.max(0, Math.floor(startOrSeconds));
+    if (diffSec < 60) return `${diffSec}s`;
+    const min = Math.floor(diffSec / 60);
+    const sec = diffSec % 60;
+    return `${min}m ${sec}s`;
+  }
   try {
-    const start = new Date(startInput).getTime();
+    const start = new Date(startOrSeconds).getTime();
     const end = endInput ? new Date(endInput).getTime() : Date.now();
     const diffSec = Math.max(0, Math.floor((end - start) / 1000));
 

@@ -40,8 +40,8 @@ export function JobList({ jobs, selectedJobId, onSelectJob }: JobListProps) {
               onClick={() => onSelectJob?.(job)}
               className={`p-3 cursor-pointer transition-all duration-150 flex items-center justify-between gap-3 select-none ${
                 isSelected
-                  ? 'bg-primary/10 border-primary/50 shadow-xs'
-                  : 'bg-card/50 border-border/80 hover:bg-secondary/40 hover:border-border'
+                  ? 'bg-[#161B22] border-[#58A6FF] text-[#F0F6FC]'
+                  : 'bg-[#161B22]/60 border-[#30363D] hover:bg-[#161B22] text-[#8B949E]'
               }`}
             >
               {/* Status & Name */}

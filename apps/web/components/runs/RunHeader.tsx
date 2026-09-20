@@ -60,7 +60,7 @@ export function RunHeader({ run, onRefresh }: RunHeaderProps) {
       )}
 
       {/* Main Run Summary Card */}
-      <Card className="p-5 bg-card/70 border-border/80">
+      <Card className="p-5 bg-[#161B22] border-[#30363D]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             {/* Title & Status Bar */}

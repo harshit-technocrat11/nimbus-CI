@@ -99,11 +99,13 @@ export default function RepositoryDetailPage({
       </Link>
 
       {/* Repository Header Card */}
-      <Card className="p-5 bg-card/60 border-border/80">
+      <Card className="p-5 bg-[#161B22] border-[#30363D]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
-              <FolderGit2 className="text-primary" size={20} />
+              <div className="w-8 h-8 rounded-md bg-[#21262D] text-[#58A6FF] flex items-center justify-center border border-[#30363D]">
+                <FolderGit2 size={18} />
+              </div>
               <h1 className="text-base sm:text-lg font-semibold text-foreground tracking-tight flex items-center gap-1.5">
                 <span className="text-muted-foreground font-normal">{repository.owner} /</span>
                 <span>{repository.name}</span>
@@ -122,7 +124,7 @@ export default function RepositoryDetailPage({
             </div>
 
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-secondary/70 px-2 py-0.5 rounded border border-border/60">
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-secondary px-2 py-0.5 rounded border border-border">
                 <GitBranch size={11} className="text-primary" />
                 <span>{repository.defaultBranch}</span>
               </span>
@@ -149,7 +151,7 @@ export default function RepositoryDetailPage({
               size="sm"
               onClick={fetchRepoData}
               title="Refresh status"
-              className="gap-1.5 h-8 text-xs"
+              className="gap-1.5 h-8 text-xs border-border hover:bg-secondary"
             >
               <RefreshCw size={13} />
               <span className="hidden sm:inline">Refresh</span>
@@ -169,12 +171,12 @@ export default function RepositoryDetailPage({
 
       {/* Tabs: Runs & Workflows */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+        <div className="flex items-center gap-1.5 border-b border-border pb-2">
           <button
             onClick={() => setActiveTab('runs')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'runs'
-                ? 'bg-secondary text-foreground border border-border'
+                ? 'bg-secondary text-primary font-semibold border border-border shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -184,7 +186,7 @@ export default function RepositoryDetailPage({
             onClick={() => setActiveTab('workflows')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'workflows'
-                ? 'bg-secondary text-foreground border border-border'
+                ? 'bg-secondary text-primary font-semibold border border-border shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

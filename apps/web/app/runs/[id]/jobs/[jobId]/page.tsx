@@ -115,6 +115,7 @@ export default function JobDetailPage({
         </h2>
         <LogViewer
           jobId={job.id}
+          job={job}
           initialLogs={job.logs}
           jobStatus={job.status}
           jobName={job.name}

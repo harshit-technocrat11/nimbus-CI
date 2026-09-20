@@ -1,107 +1,72 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
 @layer base {
   :root {
-    /* Navy / Black / White Palette */
-    --background: 222 47% 5%;        /* #070B12 Deep Navy Black */
-    --foreground: 210 40% 98%;       /* #F8FAFC Crisp White */
+    /* GitHub Actions High-Density Dark Theme tokens */
+    --background: #0d1117;
+    --foreground: #f0f6fc;
 
-    --card: 222 47% 9%;              /* #0D1527 Deep Slate Navy */
-    --card-foreground: 210 40% 98%;
+    --card: #161b22;
+    --card-foreground: #f0f6fc;
 
-    --popover: 222 47% 12%;          /* #131E35 Midnight Navy */
-    --popover-foreground: 210 40% 98%;
+    --popover: #161b22;
+    --popover-foreground: #f0f6fc;
 
-    --primary: 217 91% 60%;          /* #3B82F6 Cobalt Blue */
-    --primary-foreground: 210 40% 98%;
+    --primary: #58a6ff;
+    --primary-foreground: #0d1117;
 
-    --secondary: 217 33% 15%;        /* #17233B Muted Slate Navy */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: #21262d;
+    --secondary-foreground: #c9d1d9;
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 65%; /* #94A3B8 Secondary Muted Slate */
+    --muted: #161b22;
+    --muted-foreground: #8b949e;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 210 40% 98%;
+    --accent: #21262d;
+    --accent-foreground: #58a6ff;
 
-    --destructive: 0 84% 60%;        /* #EF4444 Crimson */
-    --destructive-foreground: 210 40% 98%;
+    --border: #30363d;
+    --input: #30363d;
+    --ring: #58a6ff;
 
-    --border: 217 33% 18%;           /* #1E2B45 Crisp 1px Navy Border */
-    --input: 217 33% 18%;
-    --ring: 217 91% 60%;
+    --success: #3fb950;
+    --warning: #d29922;
+    --destructive: #f85149;
+    --info: #58a6ff;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
   }
-}
-
-@theme {
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
-  --color-navy-950: #070b12;
-  --color-navy-900: #0d1527;
-  --color-navy-800: #131e35;
-  --color-navy-700: #1e2b45;
-  --color-navy-600: #2b3c5e;
-  --color-navy-500: #3b82f6;
-
-  --color-status-success: #34d399;
-  --color-status-running: #fbbf24;
-  --color-status-failed: #f87171;
-  --color-status-queued: #94a3b8;
-  --color-status-cancelled: #a78bfa;
-
-  --font-sans: "GitLab Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "GitLab Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
     box-sizing: border-box;
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-family: var(--font-sans, system-ui, sans-serif);
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom terminal scrollbars */
+/* Custom GitHub Dark scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #04070D;
+  background: #0d1117;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E2B45;
+  background: #30363d;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2B3C5E;
+  background: #484f58;
 }
