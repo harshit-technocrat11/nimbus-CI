@@ -1,35 +1,28 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
+import Link from 'next/link';
 import {
   FolderGit2,
   GitBranch,
   ExternalLink,
   Play,
   ChevronLeft,
-  Clock,
+  RefreshCw,
   Layers,
-  CheckCircle2,
+  Clock,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Repository, WorkflowRun, Workflow } from '../../../types/ci';
-import { api } from '../../../lib/api';
-import { StatusBadge } from '../../../components/common/StatusBadge';
-import { TriggerBadge } from '../../../components/common/TriggerBadge';
-import { RunList } from '../../../components/runs/RunList';
-import { RunCIDialog } from '../../../components/runs/RunCIDialog';
-import { CardSkeletonList } from '../../../components/common/LoadingSkeleton';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { formatDuration, formatRelativeTime, formatShortSha } from '../../../lib/utils';
+import { Repository, WorkflowRun, Workflow } from '@/types/ci';
+import { api } from '@/lib/api';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { RunList } from '@/components/runs/RunList';
+import { RunCIDialog } from '@/components/runs/RunCIDialog';
+import { CardSkeletonList } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { formatRelativeTime, formatDuration } from '@/lib/utils';
 
 export default function RepositoryDetailPage({
   params,
@@ -45,7 +38,7 @@ export default function RepositoryDetailPage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runModalOpen, setRunModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState<'runs' | 'workflows'>('runs');
 
   const fetchRepoData = async () => {
     setIsLoading(true);
@@ -76,274 +69,199 @@ export default function RepositoryDetailPage({
 
   if (isLoading) {
     return (
-      <Box sx={{ py: 3 }}>
+      <div className="py-4 space-y-4">
+        <div className="h-6 w-36 bg-secondary/40 rounded animate-pulse" />
         <CardSkeletonList count={3} />
-      </Box>
+      </div>
     );
   }
 
   if (error || !repository) {
-    return <ErrorState message={error || 'Repository not found'} onRetry={fetchRepoData} />;
+    return (
+      <ErrorState
+        message={error || 'Repository not found'}
+        onRetry={fetchRepoData}
+      />
+    );
   }
 
   const latestRun = repository.latestRun || runs[0];
 
   return (
-    <Box>
-      {/* Back to repositories link */}
-      <Box sx={{ mb: 2 }}>
-        <Link
-          href="/repositories"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            textDecoration: 'none',
-            color: '#94A3B8',
-            fontSize: '0.8125rem',
-          }}
-        >
-          <ChevronLeft size={14} />
-          Repositories
-        </Link>
-      </Box>
-
-      {/* Header Profile Bar */}
-      <Card
-        sx={{
-          p: 3,
-          backgroundColor: '#0F131C',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 2,
-          mb: 3,
-        }}
+    <div className="space-y-5">
+      {/* Back Link */}
+      <Link
+        href="/repositories"
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '8px',
-                backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#60A5FA',
-              }}
-            >
-              <FolderGit2 size={22} />
-            </Box>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h1" sx={{ fontSize: '1.35rem', fontWeight: 700 }}>
-                  {repository.name}
-                </Typography>
-                <Chip
-                  label={repository.defaultBranch}
-                  size="small"
-                  icon={<GitBranch size={11} />}
-                  sx={{
-                    fontFamily: 'var(--font-geist-mono), monospace',
-                    height: 22,
-                    fontSize: '0.6875rem',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#CBD5E1',
-                  }}
-                />
-              </Box>
-              <Typography variant="body2" sx={{ color: '#64748B' }}>
-                {repository.owner} · {repository.url}
-              </Typography>
-            </Box>
-          </Box>
+        <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+        <span>Back to Repositories</span>
+      </Link>
+
+      {/* Repository Header Card */}
+      <Card className="p-5 bg-card/60 border-border/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <FolderGit2 className="text-primary" size={20} />
+              <h1 className="text-base sm:text-lg font-semibold text-foreground tracking-tight flex items-center gap-1.5">
+                <span className="text-muted-foreground font-normal">{repository.owner} /</span>
+                <span>{repository.name}</span>
+              </h1>
+              {repository.url && (
+                <a
+                  href={repository.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  title="View repository on GitHub"
+                >
+                  <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-secondary/70 px-2 py-0.5 rounded border border-border/60">
+                <GitBranch size={11} className="text-primary" />
+                <span>{repository.defaultBranch}</span>
+              </span>
+              <span>•</span>
+              <span className="text-[11px]">
+                Created {formatRelativeTime(repository.createdAt)}
+              </span>
+              {latestRun && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px]">Latest:</span>
+                    <StatusBadge status={latestRun.status} size="small" />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Action Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <div className="flex items-center gap-2">
             <Button
-              variant="contained"
-              color="primary"
+              variant="outline"
+              size="sm"
+              onClick={fetchRepoData}
+              title="Refresh status"
+              className="gap-1.5 h-8 text-xs"
+            >
+              <RefreshCw size={13} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+
+            <Button
+              size="sm"
               onClick={() => setRunModalOpen(true)}
-              startIcon={<Play size={14} fill="currentColor" />}
+              className="gap-1.5 h-8 text-xs font-medium"
             >
-              Run CI
+              <Play size={12} className="fill-current" />
+              <span>Run workflow</span>
             </Button>
-            <Button
-              variant="outlined"
-              component="a"
-              href={repository.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              endIcon={<ExternalLink size={13} />}
-              sx={{ borderColor: 'rgba(255, 255, 255, 0.15)' }}
-            >
-              GitHub
-            </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       </Card>
 
-      {/* Latest Run Spotlight */}
-      {latestRun && (
-        <Card
-          sx={{
-            p: 2.5,
-            backgroundColor: '#0B0F17',
-            border: '1px solid rgba(59, 130, 246, 0.25)',
-            borderRadius: 2,
-            mb: 4,
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Latest CI Run
-            </Typography>
-            <Link
-              href={`/runs/${latestRun.id}`}
-              style={{ fontSize: '0.75rem', color: '#60A5FA', textDecoration: 'none', fontWeight: 500 }}
-            >
-              Inspect Run #{latestRun.id.replace('run-', '')} →
-            </Link>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: 'space-between',
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              gap: 2,
-            }}
+      {/* Tabs: Runs & Workflows */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+          <button
+            onClick={() => setActiveTab('runs')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              activeTab === 'runs'
+                ? 'bg-secondary text-foreground border border-border'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <StatusBadge status={latestRun.status} size="medium" />
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#F8FAFC' }}>
-                  Run #{latestRun.id.replace('run-', '')} on {latestRun.branch}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94A3B8', fontFamily: 'var(--font-geist-mono), monospace' }}>
-                  Commit {formatShortSha(latestRun.commitSha)} · <TriggerBadge type={latestRun.triggerType} />
-                </Typography>
-              </Box>
-            </Box>
+            Run History ({runs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('workflows')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              activeTab === 'workflows'
+                ? 'bg-secondary text-foreground border border-border'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Workflows ({workflows.length})
+          </button>
+        </div>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="caption" sx={{ color: '#94A3B8', fontFamily: 'var(--font-geist-mono), monospace' }}>
-                Duration: {formatDuration(latestRun.startedAt, latestRun.completedAt, latestRun.durationSeconds)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                {formatRelativeTime(latestRun.createdAt)}
-              </Typography>
-            </Box>
-          </Box>
-        </Card>
-      )}
+        {/* Tab 1: Run History */}
+        {activeTab === 'runs' && (
+          <RunList runs={runs} showRepoColumn={false} />
+        )}
 
-      {/* Tabs: Recent Runs vs Workflows */}
-      <Box sx={{ mb: 2.5 }}>
-        <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
-          <Tab label={`Recent Runs (${runs.length})`} />
-          <Tab label={`Configured Workflows (${workflows.length})`} />
-        </Tabs>
-      </Box>
+        {/* Tab 2: Workflows Definition */}
+        {activeTab === 'workflows' && (
+          <div className="space-y-3">
+            {workflows.map((wf) => {
+              const wfRuns = runs.filter((r) => r.workflowId === wf.id);
+              const lastWfRun = wfRuns[0];
 
-      {/* Tab 0: Recent Runs Table */}
-      {activeTab === 0 && (
-        <RunList runs={runs} showRepoColumn={false} />
-      )}
-
-      {/* Tab 1: Workflows List */}
-      {activeTab === 1 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {workflows.map((wf) => (
-            <Card
-              key={wf.id}
-              sx={{
-                p: 2.5,
-                backgroundColor: '#0E1219',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 2,
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Layers size={16} color="#3B82F6" />
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#F8FAFC' }}>
-                    {wf.name}
-                  </Typography>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setRunModalOpen(true)}
-                  startIcon={<Play size={12} fill="currentColor" />}
-                  sx={{ fontSize: '0.75rem', py: 0.25 }}
+              return (
+                <Card
+                  key={wf.id}
+                  className="p-4 bg-card/40 border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
-                  Run Workflow
-                </Button>
-              </Box>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Layers size={15} className="text-primary" />
+                      <span className="font-semibold text-xs text-foreground font-mono">
+                        {wf.name}
+                      </span>
+                      <Badge variant="secondary" className="text-[10px] font-mono">
+                        v{wf.configVersion}
+                      </Badge>
+                    </div>
 
-              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1.5 }}>
-                Jobs Definition ({wf.definition?.length || 0} stages)
-              </Typography>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{wfRuns.length} runs executed</span>
+                      {lastWfRun && (
+                        <>
+                          <span>•</span>
+                          <span>Last run {formatRelativeTime(lastWfRun.createdAt)}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {(wf.definition || []).map((jobDef, jIdx) => (
-                  <Box
-                    key={jIdx}
-                    sx={{
-                      p: 1.25,
-                      borderRadius: 1,
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                      minWidth: 160,
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 600,
-                        color: '#60A5FA',
-                        fontFamily: 'var(--font-geist-mono), monospace',
-                        display: 'block',
-                      }}
+                  <div className="flex items-center gap-2">
+                    {lastWfRun && (
+                      <StatusBadge status={lastWfRun.status} size="small" />
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRunModalOpen(true)}
+                      className="gap-1.5 h-7 text-xs"
                     >
-                      {jobDef.name}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: '#94A3B8',
-                        fontSize: '0.6875rem',
-                        fontFamily: 'var(--font-geist-mono), monospace',
-                      }}
-                    >
-                      {jobDef.commands.join(' && ')}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Card>
-          ))}
-        </Box>
-      )}
+                      <Play size={11} className="fill-current" />
+                      <span>Run</span>
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Trigger CI Dialog */}
+      {/* Manual Run Dialog */}
       <RunCIDialog
         open={runModalOpen}
         onClose={() => setRunModalOpen(false)}
         repository={repository}
         workflows={workflows}
+        onTriggered={() => {
+          fetchRepoData();
+        }}
       />
-    </Box>
+    </div>
   );
 }

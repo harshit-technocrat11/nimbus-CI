@@ -1,27 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import { Search, GitBranch, PlaySquare, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { WorkflowRun } from '../../types/ci';
-import { StatusBadge } from '../common/StatusBadge';
-import { TriggerBadge } from '../common/TriggerBadge';
-import { EmptyState } from '../common/EmptyState';
-import { formatDuration, formatRelativeTime, formatShortSha } from '../../lib/utils';
+import { Search, GitBranch, PlaySquare, ChevronRight, FolderGit2 } from 'lucide-react';
+import { WorkflowRun } from '@/types/ci';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { TriggerBadge } from '@/components/common/TriggerBadge';
+import { EmptyState } from '@/components/common/EmptyState';
+import { formatDuration, formatRelativeTime, formatShortSha } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface RunListProps {
   runs: WorkflowRun[];
@@ -36,7 +32,6 @@ export function RunList({
   title,
   subtitle,
 }: RunListProps) {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUCCESS' | 'RUNNING' | 'FAILED' | 'QUEUED'>('ALL');
 
@@ -57,224 +52,172 @@ export function RunList({
   });
 
   return (
-    <Box>
+    <div className="space-y-4">
       {title && (
-        <Box sx={{ mb: 2.5 }}>
-          <Typography variant="h1" sx={{ fontSize: '1.5rem', fontWeight: 700, mb: 0.5 }}>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+              <span>{title}</span>
+              <Badge variant="secondary" className="text-[11px] font-mono font-normal">
+                {runs.length}
+              </Badge>
+            </h1>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Filter Row */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: 1.5,
-          mb: 2,
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder="Filter by run, branch, or commit..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ minWidth: { xs: '100%', sm: 300 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={15} color="#64748B" />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED', 'QUEUED'] as const).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setStatusFilter(filter)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                statusFilter === filter
+                  ? 'bg-secondary text-foreground border border-border'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              {filter === 'ALL' ? 'All Runs' : filter}
+            </button>
+          ))}
+        </div>
 
-        <Box sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', pb: { xs: 1, sm: 0 } }}>
-          {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED', 'QUEUED'] as const).map((filter) => {
-            const isSelected = statusFilter === filter;
-            return (
-              <Chip
-                key={filter}
-                label={filter === 'ALL' ? 'All Runs' : filter}
-                size="small"
-                onClick={() => setStatusFilter(filter)}
-                sx={{
-                  cursor: 'pointer',
-                  backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  borderColor: isSelected ? 'rgba(59, 130, 246, 0.35)' : 'rgba(255, 255, 255, 0.08)',
-                  borderWidth: 1,
-                  borderStyle: 'solid',
-                  color: isSelected ? '#60A5FA' : '#94A3B8',
-                  fontSize: '0.75rem',
-                  fontWeight: isSelected ? 600 : 400,
-                  '&:hover': {
-                    backgroundColor: isSelected
-                      ? 'rgba(59, 130, 246, 0.25)'
-                      : 'rgba(255, 255, 255, 0.06)',
-                  },
-                }}
-              />
-            );
-          })}
-        </Box>
-      </Box>
+        <div className="relative w-full sm:w-64">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <Input
+            placeholder="Search runs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-8 text-xs bg-secondary/30"
+          />
+        </div>
+      </div>
 
       {/* Runs Table */}
       {filteredRuns.length === 0 ? (
         <EmptyState
-          icon={<PlaySquare size={32} />}
-          title={searchQuery ? 'No matching runs' : 'No workflow runs yet'}
+          icon={<PlaySquare size={24} />}
+          title={searchQuery ? 'No workflow runs match filter' : 'No workflow runs recorded'}
           description={
             searchQuery
-              ? 'No workflow runs match your search filters.'
-              : 'Trigger a workflow run from the repository page to start tracking CI activity.'
+              ? 'Try changing your search term or status filter'
+              : 'Trigger a workflow run or push code to a connected repository to start CI execution'
           }
         />
       ) : (
-        <TableContainer
-          component={Paper}
-          sx={{
-            borderRadius: 2,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: '#0E1219',
-          }}
-        >
-          <Table sx={{ minWidth: 650 }} aria-label="workflow runs table">
-            <TableHead>
+        <div className="rounded-lg border border-border bg-card/40 overflow-hidden shadow-xs">
+          <Table>
+            <TableHeader className="bg-secondary/20">
               <TableRow>
-                <TableCell>Status</TableCell>
-                <TableCell>Run</TableCell>
-                {showRepoColumn && <TableCell>Repository</TableCell>}
-                <TableCell>Branch / Commit</TableCell>
-                <TableCell>Trigger</TableCell>
-                <TableCell>Duration</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right"></TableCell>
+                <TableHead className="w-[15%]">Status</TableHead>
+                <TableHead className="w-[28%]">Workflow & Run</TableHead>
+                {showRepoColumn && <TableHead className="w-[22%]">Repository</TableHead>}
+                <TableHead className="w-[18%]">Branch / Commit</TableHead>
+                <TableHead className="w-[12%]">Duration & Time</TableHead>
+                <TableHead className="w-[5%] text-right"></TableHead>
               </TableRow>
-            </TableHead>
+            </TableHeader>
             <TableBody>
               {filteredRuns.map((run) => {
                 const repo = run.workflow?.repository;
-                const runNumber = run.id.replace('run-', '#');
-
                 return (
-                  <TableRow
-                    key={run.id}
-                    hover
-                    onClick={() => router.push(`/runs/${run.id}`)}
-                    sx={{
-                      cursor: 'pointer',
-                      '&:last-child td, &:last-child th': { border: 0 },
-                    }}
-                  >
+                  <TableRow key={run.id} className="group hover:bg-secondary/30">
                     {/* Status */}
                     <TableCell>
-                      <StatusBadge status={run.status} size="small" />
+                      <Link href={`/runs/${run.id}`}>
+                        <StatusBadge status={run.status} size="small" />
+                      </Link>
                     </TableCell>
 
-                    {/* Run Number */}
+                    {/* Workflow Name & Run ID */}
                     <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-geist-mono), monospace',
-                          color: '#F8FAFC',
-                        }}
-                      >
-                        {runNumber}
-                      </Typography>
+                      <div className="space-y-0.5">
+                        <Link
+                          href={`/runs/${run.id}`}
+                          className="font-semibold text-xs text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                        >
+                          <span>{run.workflow?.name || 'CI Workflow'}</span>
+                          <span className="font-mono text-muted-foreground font-normal text-[11px]">
+                            #{run.id.replace('run-', '')}
+                          </span>
+                        </Link>
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <TriggerBadge type={run.triggerType} />
+                        </div>
+                      </div>
                     </TableCell>
 
-                    {/* Repository */}
+                    {/* Repository Column (optional) */}
                     {showRepoColumn && (
                       <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: '#CBD5E1',
-                            fontWeight: 500,
-                          }}
-                        >
-                          {repo?.name || 'nimbus-ci'}
-                        </Typography>
+                        {repo ? (
+                          <Link
+                            href={`/repositories/${repo.id}`}
+                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                          >
+                            <FolderGit2 size={13} className="text-primary/70" />
+                            <span className="truncate max-w-[160px]">
+                              {repo.owner}/{repo.name}
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/40 font-mono">—</span>
+                        )}
                       </TableCell>
                     )}
 
-                    {/* Branch / Commit */}
+                    {/* Branch & Commit */}
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <GitBranch size={12} color="#3B82F6" />
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontFamily: 'var(--font-geist-mono), monospace',
-                            fontWeight: 500,
-                            color: '#F8FAFC',
-                          }}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-[11px] font-mono text-foreground">
+                          <GitBranch size={11} className="text-muted-foreground" />
+                          <span>{run.branch}</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded border border-border/60">
+                          {formatShortSha(run.commitSha)}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Duration & Relative Time */}
+                    <TableCell>
+                      <div className="text-[11px] space-y-0.5">
+                        <p className="text-foreground font-mono text-[11px]">
+                          {formatDuration(run.startedAt, run.completedAt)}
+                        </p>
+                        <p className="text-muted-foreground text-[10px]">
+                          {formatRelativeTime(run.createdAt)}
+                        </p>
+                      </div>
+                    </TableCell>
+
+                    {/* Action */}
+                    <TableCell className="text-right">
+                      <Link href={`/runs/${run.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
                         >
-                          {run.branch}
-                        </Typography>
-                        {run.commitSha && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: '#64748B',
-                              fontFamily: 'var(--font-geist-mono), monospace',
-                            }}
-                          >
-                            · {formatShortSha(run.commitSha)}
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
-
-                    {/* Trigger */}
-                    <TableCell>
-                      <TriggerBadge type={run.triggerType} size="small" />
-                    </TableCell>
-
-                    {/* Duration */}
-                    <TableCell>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontFamily: 'var(--font-geist-mono), monospace',
-                          color: '#94A3B8',
-                        }}
-                      >
-                        {formatDuration(run.startedAt, run.completedAt, run.durationSeconds)}
-                      </Typography>
-                    </TableCell>
-
-                    {/* Created relative time */}
-                    <TableCell>
-                      <Typography variant="caption" sx={{ color: '#64748B' }}>
-                        {formatRelativeTime(run.createdAt)}
-                      </Typography>
-                    </TableCell>
-
-                    {/* Arrow */}
-                    <TableCell align="right">
-                      <IconButton size="small" sx={{ color: '#64748B' }}>
-                        <ChevronRight size={14} />
-                      </IconButton>
+                          <ChevronRight size={14} />
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
-        </TableContainer>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
