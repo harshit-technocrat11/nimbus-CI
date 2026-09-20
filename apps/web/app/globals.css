@@ -1,47 +1,89 @@
-:root {
-  --background: #0B0D11;
-  --foreground: #F3F4F6;
-  --font-geist-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: "JetBrains Mono", "Fira Code", monospace;
-}
+@import "tailwindcss";
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+@layer base {
+  :root {
+    /* Navy / Black / White Palette */
+    --background: 222 47% 5%;        /* #070B12 Deep Navy Black */
+    --foreground: 210 40% 98%;       /* #F8FAFC Crisp White */
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+    --card: 222 47% 9%;              /* #0D1527 Deep Slate Navy */
+    --card-foreground: 210 40% 98%;
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+    --popover: 222 47% 12%;          /* #131E35 Midnight Navy */
+    --popover-foreground: 210 40% 98%;
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+    --primary: 217 91% 60%;          /* #3B82F6 Cobalt Blue */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 15%;        /* #17233B Muted Slate Navy */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%; /* #94A3B8 Secondary Muted Slate */
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;        /* #EF4444 Crimson */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 18%;           /* #1E2B45 Crisp 1px Navy Border */
+    --input: 217 33% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.5rem;
   }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-navy-950: #070b12;
+  --color-navy-900: #0d1527;
+  --color-navy-800: #131e35;
+  --color-navy-700: #1e2b45;
+  --color-navy-600: #2b3c5e;
+  --color-navy-500: #3b82f6;
+
+  --color-status-success: #34d399;
+  --color-status-running: #fbbf24;
+  --color-status-failed: #f87171;
+  --color-status-queued: #94a3b8;
+  --color-status-cancelled: #a78bfa;
+
+  --font-sans: "GitLab Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "GitLab Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
   }
-  50% {
-    opacity: 0.35;
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -52,14 +94,14 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0D11;
+  background: #04070D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262F40;
+  background: #1E2B45;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B82F6;
+  background: #2B3C5E;
 }

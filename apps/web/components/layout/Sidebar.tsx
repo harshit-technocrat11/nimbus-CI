@@ -1,22 +1,11 @@
 'use client';
 
 import React from 'react';
-import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Typography from '@mui/material/Typography';
-import {
-  FolderGit2,
-  PlaySquare,
-  Server,
-  Settings,
-  BookOpen,
-} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { FolderGit2, PlaySquare, LayoutDashboard, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -27,139 +16,71 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   const navItems = [
     {
+      label: 'Overview',
+      href: '/',
+      icon: LayoutDashboard,
+      active: pathname === '/',
+    },
+    {
       label: 'Repositories',
       href: '/repositories',
-      icon: <FolderGit2 size={16} />,
-      active: pathname === '/' || pathname.startsWith('/repositories'),
+      icon: FolderGit2,
+      active: pathname.startsWith('/repositories'),
     },
     {
       label: 'Workflow Runs',
       href: '/runs',
-      icon: <PlaySquare size={16} />,
+      icon: PlaySquare,
       active: pathname.startsWith('/runs'),
-    },
-    {
-      label: 'Runners',
-      href: '/runners',
-      icon: <Server size={16} />,
-      active: pathname.startsWith('/runners'),
-    },
-    {
-      label: 'Settings',
-      href: '/settings',
-      icon: <Settings size={16} />,
-      active: pathname.startsWith('/settings'),
     },
   ];
 
   return (
-    <Box
-      component="aside"
-      sx={{
-        width: 220,
-        height: 'calc(100vh - 54px)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-        backgroundColor: '#0A0D12',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        p: 1.5,
-      }}
-    >
-      <Box>
-        <Typography
-          variant="caption"
-          sx={{
-            px: 1.5,
-            py: 0.75,
-            display: 'block',
-            fontWeight: 600,
-            color: '#64748B',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            fontSize: '0.6875rem',
-          }}
-        >
-          Navigation
-        </Typography>
-
-        <List sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {navItems.map((item) => (
-            <ListItem key={item.href} disablePadding>
-              <ListItemButton
-                component={Link}
-                href={item.href}
-                onClick={onClose}
-                sx={{
-                  borderRadius: '6px',
-                  py: 0.85,
-                  px: 1.25,
-                  backgroundColor: item.active ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                  border: `1px solid ${item.active ? 'rgba(59, 130, 246, 0.25)' : 'transparent'}`,
-                  color: item.active ? '#F8FAFC' : '#94A3B8',
-                  '&:hover': {
-                    backgroundColor: item.active
-                      ? 'rgba(59, 130, 246, 0.15)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    color: '#F8FAFC',
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 28,
-                    color: item.active ? '#3B82F6' : '#64748B',
-                  }}
+    <aside className="w-56 h-[calc(100vh-52px)] border-r border-border bg-card/60 flex flex-col justify-between p-3 select-none">
+      <div className="space-y-4">
+        <div>
+          <p className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Menu
+          </p>
+          <nav className="mt-1 space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
+                    item.active
+                      ? "bg-primary/10 text-foreground border border-primary/25 font-semibold"
+                      : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground border border-transparent"
+                  )}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: '0.8125rem',
-                    fontWeight: item.active ? 600 : 400,
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Box>
+                  <Icon size={15} className={item.active ? "text-primary" : "text-muted-foreground"} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
 
-      {/* Bottom Footer Info */}
-      <Box
-        sx={{
-          p: 1.25,
-          borderRadius: '6px',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <Box
-            sx={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              backgroundColor: '#10B981',
-            }}
-          />
-          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-            Runner Cluster
-          </Typography>
-        </Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#64748B',
-            fontSize: '0.6875rem',
-            display: 'block',
-            fontFamily: 'var(--font-geist-mono), monospace',
-          }}
-        >
-          3 / 4 Workers Active
-        </Typography>
-      </Box>
-    </Box>
+      {/* GitHub App Connection Status */}
+      <div className="pt-3 border-t border-border/60">
+        <div className="flex items-center justify-between px-2.5 py-2 rounded-md bg-secondary/30 border border-border/40">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[11px] font-medium text-foreground">GitHub App</span>
+          </div>
+          <Badge variant="success" className="text-[10px] px-1.5 py-0 h-4">
+            Connected
+          </Badge>
+        </div>
+      </div>
+    </aside>
   );
 }

@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import {
   CheckCircle2,
   Clock,
@@ -10,10 +8,10 @@ import {
   XCircle,
   MinusCircle,
   Radio,
-  Activity,
   PowerOff,
 } from 'lucide-react';
-import { WorkflowRunStatus, JobStatus, RunnerStatus } from '../../types/ci';
+import { cn } from '@/lib/utils';
+import { WorkflowRunStatus, JobStatus, RunnerStatus } from '@/types/ci';
 
 type StatusType = WorkflowRunStatus | JobStatus | RunnerStatus | string;
 
@@ -21,147 +19,84 @@ interface StatusBadgeProps {
   status: StatusType;
   size?: 'small' | 'medium';
   showLabel?: boolean;
+  className?: string;
 }
 
-interface StatusConfig {
-  label: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  icon: React.ReactNode;
-  pulse?: boolean;
-}
-
-export function StatusBadge({ status, size = 'small', showLabel = true }: StatusBadgeProps) {
+export function StatusBadge({
+  status,
+  size = 'small',
+  showLabel = true,
+  className,
+}: StatusBadgeProps) {
   const normalized = (status || '').toUpperCase();
 
-  const getConfig = (): StatusConfig => {
-    switch (normalized) {
-      case 'SUCCESS':
-        return {
-          label: 'SUCCESS',
-          color: '#10B981',
-          bgColor: 'rgba(16, 185, 129, 0.12)',
-          borderColor: 'rgba(16, 185, 129, 0.25)',
-          icon: <CheckCircle2 size={size === 'small' ? 12 : 14} strokeWidth={2.5} />,
-        };
-      case 'RUNNING':
-        return {
-          label: 'RUNNING',
-          color: '#3B82F6',
-          bgColor: 'rgba(59, 130, 246, 0.12)',
-          borderColor: 'rgba(59, 130, 246, 0.3)',
-          icon: (
-            <Loader2
-              size={size === 'small' ? 12 : 14}
-              strokeWidth={2.5}
-              className="animate-spin"
-              style={{ animation: 'spin 1.5s linear infinite' }}
-            />
-          ),
-          pulse: true,
-        };
-      case 'QUEUED':
-        return {
-          label: 'QUEUED',
-          color: '#94A3B8',
-          bgColor: 'rgba(148, 163, 184, 0.1)',
-          borderColor: 'rgba(148, 163, 184, 0.2)',
-          icon: <Clock size={size === 'small' ? 12 : 14} strokeWidth={2} />,
-        };
-      case 'FAILED':
-        return {
-          label: 'FAILED',
-          color: '#EF4444',
-          bgColor: 'rgba(239, 68, 68, 0.12)',
-          borderColor: 'rgba(239, 68, 68, 0.28)',
-          icon: <XCircle size={size === 'small' ? 12 : 14} strokeWidth={2.5} />,
-        };
-      case 'CANCELLED':
-        return {
-          label: 'CANCELLED',
-          color: '#64748B',
-          bgColor: 'rgba(100, 116, 139, 0.1)',
-          borderColor: 'rgba(100, 116, 139, 0.2)',
-          icon: <MinusCircle size={size === 'small' ? 12 : 14} strokeWidth={2} />,
-        };
-      case 'ONLINE':
-        return {
-          label: 'ONLINE',
-          color: '#10B981',
-          bgColor: 'rgba(16, 185, 129, 0.12)',
-          borderColor: 'rgba(16, 185, 129, 0.25)',
-          icon: <Radio size={size === 'small' ? 12 : 14} strokeWidth={2.5} />,
-        };
-      case 'BUSY':
-        return {
-          label: 'BUSY',
-          color: '#F59E0B',
-          bgColor: 'rgba(245, 158, 11, 0.12)',
-          borderColor: 'rgba(245, 158, 11, 0.28)',
-          icon: <Activity size={size === 'small' ? 12 : 14} strokeWidth={2.5} />,
-          pulse: true,
-        };
-      case 'OFFLINE':
-      case 'DRAINING':
-        return {
-          label: normalized,
-          color: '#64748B',
-          bgColor: 'rgba(100, 116, 139, 0.1)',
-          borderColor: 'rgba(100, 116, 139, 0.2)',
-          icon: <PowerOff size={size === 'small' ? 12 : 14} strokeWidth={2} />,
-        };
-      default:
-        return {
-          label: normalized || 'UNKNOWN',
-          color: '#94A3B8',
-          bgColor: 'rgba(148, 163, 184, 0.1)',
-          borderColor: 'rgba(148, 163, 184, 0.2)',
-          icon: <Clock size={size === 'small' ? 12 : 14} strokeWidth={2} />,
-        };
-    }
-  };
+  const iconSize = size === 'small' ? 12 : 14;
 
-  const config = getConfig();
+  let badgeClasses = 'bg-slate-800/40 text-slate-400 border-slate-700/50';
+  let label = normalized || 'UNKNOWN';
+  let icon: React.ReactNode = <Clock size={iconSize} />;
+
+  switch (normalized) {
+    case 'SUCCESS':
+      badgeClasses = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      icon = <CheckCircle2 size={iconSize} className="stroke-[2.5]" />;
+      label = 'SUCCESS';
+      break;
+
+    case 'RUNNING':
+      badgeClasses = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      icon = <Loader2 size={iconSize} className="animate-spin stroke-[2.5]" />;
+      label = 'RUNNING';
+      break;
+
+    case 'FAILED':
+      badgeClasses = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+      icon = <XCircle size={iconSize} className="stroke-[2.5]" />;
+      label = 'FAILED';
+      break;
+
+    case 'QUEUED':
+      badgeClasses = 'bg-slate-800/60 text-slate-400 border-slate-700/60';
+      icon = <Clock size={iconSize} />;
+      label = 'QUEUED';
+      break;
+
+    case 'CANCELLED':
+      badgeClasses = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+      icon = <MinusCircle size={iconSize} />;
+      label = 'CANCELLED';
+      break;
+
+    case 'ONLINE':
+      badgeClasses = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      icon = <Radio size={iconSize} />;
+      label = 'ONLINE';
+      break;
+
+    case 'BUSY':
+      badgeClasses = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      icon = <Loader2 size={iconSize} className="animate-spin" />;
+      label = 'BUSY';
+      break;
+
+    case 'OFFLINE':
+      badgeClasses = 'bg-slate-800/40 text-slate-500 border-slate-700/40';
+      icon = <PowerOff size={iconSize} />;
+      label = 'OFFLINE';
+      break;
+  }
 
   return (
-    <Box
-      component="span"
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.75,
-        px: size === 'small' ? 1 : 1.25,
-        py: size === 'small' ? 0.35 : 0.5,
-        borderRadius: '4px',
-        backgroundColor: config.bgColor,
-        border: `1px solid ${config.borderColor}`,
-        color: config.color,
-        fontSize: size === 'small' ? '0.6875rem' : '0.75rem',
-        fontWeight: 600,
-        letterSpacing: '0.04em',
-        fontFamily: 'var(--font-geist-mono), monospace',
-        whiteSpace: 'nowrap',
-        userSelect: 'none',
-      }}
-    >
-      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-        {config.icon}
-      </Box>
-      {showLabel && (
-        <Typography
-          component="span"
-          sx={{
-            fontSize: 'inherit',
-            fontWeight: 'inherit',
-            color: 'inherit',
-            fontFamily: 'inherit',
-            lineHeight: 1,
-          }}
-        >
-          {config.label}
-        </Typography>
+    <div
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md border font-mono font-medium select-none transition-colors',
+        size === 'small' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs',
+        badgeClasses,
+        className
       )}
-    </Box>
+    >
+      {icon}
+      {showLabel && <span className="tracking-wide">{label}</span>}
+    </div>
   );
 }

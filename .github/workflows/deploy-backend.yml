@@ -14,6 +14,8 @@ on:
       - 'pnpm-lock.yaml'
       - 'turbo.json'
       - 'package.json'
+      - '.npmrc'
+      - 'pnpm-workspace.yaml'
   workflow_dispatch:
 
 concurrency:
@@ -66,13 +68,19 @@ jobs:
 
             echo "📦 [3/5] Installing dependencies & syncing database..."
             if ! command -v python3 >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
-              echo "🛠️ Installing native build prerequisites (python3, make, g++, build-essential)..."
+              echo "🛠️ Installing native build prerequisites (python3, python3-dev, make, g++, build-essential)..."
               sudo apt-get update -qq
-              sudo apt-get install -y -qq python3 make g++ build-essential
+              sudo apt-get install -y -qq python3 python3-dev make g++ build-essential
             fi
-            export PYTHON=$(command -v python3)
 
-            pnpm install --frozen-lockfile
+            export PYTHON="$(command -v python3)"
+            export npm_config_python="$PYTHON"
+
+            command -v python3 >/dev/null 2>&1 || { echo "❌ python3 is required"; exit 1; }
+            command -v g++ >/dev/null 2>&1 || { echo "❌ g++ is required"; exit 1; }
+            command -v make >/dev/null 2>&1 || { echo "❌ make is required"; exit 1; }
+
+            pnpm install --frozen-lockfile --ignore-scripts=false
             pnpm --filter @nimbus-ci/db run db:generate
             pnpm --filter @nimbus-ci/db run db:push
 

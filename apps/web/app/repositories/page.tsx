@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Box from '@mui/material/Box';
-import { Repository } from '../../types/ci';
-import { api } from '../../lib/api';
-import { RepositoryList } from '../../components/repositories/RepositoryList';
-import { TableSkeletonRows } from '../../components/common/LoadingSkeleton';
-import { ErrorState } from '../../components/common/ErrorState';
-import { ConnectGitHubDialog } from '../../components/repositories/ConnectGitHubDialog';
+import { Repository } from '@/types/ci';
+import { api } from '@/lib/api';
+import { RepositoryList } from '@/components/repositories/RepositoryList';
+import { TableSkeletonRows } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { ConnectGitHubDialog } from '@/components/repositories/ConnectGitHubDialog';
 
 export default function RepositoriesPage() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -34,9 +33,9 @@ export default function RepositoriesPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ py: 3 }}>
-        <TableSkeletonRows rows={5} cols={5} />
-      </Box>
+      <div className="py-3">
+        <TableSkeletonRows rows={5} />
+      </div>
     );
   }
 
@@ -45,7 +44,7 @@ export default function RepositoriesPage() {
   }
 
   return (
-    <Box>
+    <div className="space-y-4">
       <RepositoryList
         repositories={repositories}
         onOpenConnectModal={() => setConnectModalOpen(true)}
@@ -55,10 +54,8 @@ export default function RepositoriesPage() {
       <ConnectGitHubDialog
         open={connectModalOpen}
         onClose={() => setConnectModalOpen(false)}
-        onConnected={() => {
-          fetchRepos();
-        }}
+        onConnected={() => fetchRepos()}
       />
-    </Box>
+    </div>
   );
 }

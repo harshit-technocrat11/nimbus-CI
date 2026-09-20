@@ -1,36 +1,32 @@
 'use client';
 
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Link from 'next/link';
 import {
   Search,
-  Plus,
   GitBranch,
   ExternalLink,
   Play,
   FolderGit2,
   ChevronRight,
+  GitFork,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Repository } from '../../types/ci';
-import { StatusBadge } from '../common/StatusBadge';
-import { EmptyState } from '../common/EmptyState';
-import { formatRelativeTime, formatShortSha, formatDuration } from '../../lib/utils';
-import { RunCIDialog } from '../runs/RunCIDialog';
+import { Repository } from '@/types/ci';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { EmptyState } from '@/components/common/EmptyState';
+import { formatRelativeTime, formatShortSha, formatDuration } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { RunCIDialog } from '@/components/runs/RunCIDialog';
 
 interface RepositoryListProps {
   repositories: Repository[];
@@ -60,311 +56,229 @@ export function RepositoryList({
   });
 
   return (
-    <Box>
-      {/* Header Bar */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h1" sx={{ fontSize: '1.5rem', fontWeight: 700, mb: 0.5 }}>
-            Repositories
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            Connected repositories and their latest continuous integration activity.
-          </Typography>
-        </Box>
+    <div className="space-y-4">
+      {/* Top Header & Search Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+            <span>Repositories</span>
+            <Badge variant="secondary" className="text-[11px] font-mono font-normal">
+              {repositories.length}
+            </Badge>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Monitored GitHub repositories configured for automated CI workflows
+          </p>
+        </div>
 
-        {onOpenConnectModal && (
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            />
+            <Input
+              placeholder="Filter repositories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-xs bg-secondary/30"
+            />
+          </div>
+
           <Button
-            variant="contained"
-            color="primary"
+            size="sm"
             onClick={onOpenConnectModal}
-            startIcon={<Plus size={16} />}
-            sx={{ fontWeight: 600 }}
+            className="gap-1.5 h-8 text-xs shrink-0"
           >
-            Connect Repository
+            <GitFork size={13} />
+            <span>Connect</span>
           </Button>
-        )}
-      </Box>
+        </div>
+      </div>
 
-      {/* Filter and Search Row */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: 1.5,
-          mb: 2,
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder="Filter repositories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ minWidth: { xs: '100%', sm: 280 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={15} color="#64748B" />
-              </InputAdornment>
-            ),
-          }}
-        />
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1.5 border-b border-border/60 pb-2.5 text-xs">
+        {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED'] as const).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setStatusFilter(filter)}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+              statusFilter === filter
+                ? 'bg-secondary text-foreground border border-border'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+            }`}
+          >
+            {filter === 'ALL' ? 'All Repositories' : filter}
+          </button>
+        ))}
+      </div>
 
-        <Box sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', pb: { xs: 1, sm: 0 } }}>
-          {(['ALL', 'SUCCESS', 'RUNNING', 'FAILED'] as const).map((filter) => {
-            const isSelected = statusFilter === filter;
-            return (
-              <Chip
-                key={filter}
-                label={filter === 'ALL' ? 'All Repos' : filter}
-                size="small"
-                onClick={() => setStatusFilter(filter)}
-                sx={{
-                  cursor: 'pointer',
-                  backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  borderColor: isSelected ? 'rgba(59, 130, 246, 0.35)' : 'rgba(255, 255, 255, 0.08)',
-                  borderWidth: 1,
-                  borderStyle: 'solid',
-                  color: isSelected ? '#60A5FA' : '#94A3B8',
-                  fontSize: '0.75rem',
-                  fontWeight: isSelected ? 600 : 400,
-                  '&:hover': {
-                    backgroundColor: isSelected
-                      ? 'rgba(59, 130, 246, 0.25)'
-                      : 'rgba(255, 255, 255, 0.06)',
-                  },
-                }}
-              />
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Repositories Table / List */}
+      {/* Table Container */}
       {filteredRepositories.length === 0 ? (
         <EmptyState
-          icon={<FolderGit2 size={32} />}
-          title={searchQuery ? 'No matching repositories' : 'No repositories connected'}
+          icon={<FolderGit2 size={24} />}
+          title={searchQuery ? 'No repositories match filter' : 'No repositories connected'}
           description={
             searchQuery
-              ? 'No connected repositories match your search query.'
-              : 'Connect a GitHub repository to start running automated CI pipelines with Nimbus.'
+              ? 'Try changing your search term or status filter'
+              : 'Connect a GitHub repository to trigger CI builds on push and pull requests'
           }
-          actionLabel={searchQuery ? undefined : 'Connect GitHub Repository'}
-          onAction={onOpenConnectModal}
+          actionLabel={searchQuery ? 'Clear filter' : 'Connect Repository'}
+          onAction={() => {
+            if (searchQuery) {
+              setSearchQuery('');
+              setStatusFilter('ALL');
+            } else {
+              onOpenConnectModal?.();
+            }
+          }}
         />
       ) : (
-        <TableContainer
-          component={Paper}
-          sx={{
-            borderRadius: 2,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: '#0E1219',
-          }}
-        >
-          <Table sx={{ minWidth: 650 }} aria-label="repositories table">
-            <TableHead>
+        <div className="rounded-lg border border-border bg-card/40 overflow-hidden shadow-xs">
+          <Table>
+            <TableHeader className="bg-secondary/20">
               <TableRow>
-                <TableCell>Repository</TableCell>
-                <TableCell>Latest Status</TableCell>
-                <TableCell>Commit / Branch</TableCell>
-                <TableCell>Duration / Time</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableHead className="w-[38%]">Repository</TableHead>
+                <TableHead className="w-[24%]">Latest Run</TableHead>
+                <TableHead className="w-[18%]">Commit / Branch</TableHead>
+                <TableHead className="w-[12%]">Activity</TableHead>
+                <TableHead className="w-[8%] text-right">Actions</TableHead>
               </TableRow>
-            </TableHead>
+            </TableHeader>
             <TableBody>
               {filteredRepositories.map((repo) => {
                 const latestRun = repo.latestRun;
                 return (
-                  <TableRow
-                    key={repo.id}
-                    hover
-                    sx={{
-                      cursor: 'pointer',
-                      '&:last-child td, &:last-child th': { border: 0 },
-                    }}
-                  >
-                    {/* Repository Name & Owner */}
+                  <TableRow key={repo.id} className="group hover:bg-secondary/30">
+                    {/* Repository Name & Branch */}
                     <TableCell>
-                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                          <Box
-                            sx={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: '4px',
-                              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                              border: '1px solid rgba(255, 255, 255, 0.08)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#94A3B8',
-                            }}
+                      <div className="flex items-start gap-2.5">
+                        <FolderGit2
+                          size={16}
+                          className="text-primary mt-0.5 shrink-0 group-hover:scale-105 transition-transform"
+                        />
+                        <div className="min-w-0">
+                          <Link
+                            href={`/repositories/${repo.id}`}
+                            className="font-semibold text-xs text-foreground hover:text-primary transition-colors flex items-center gap-1.5"
                           >
-                            <FolderGit2 size={14} />
-                          </Box>
-                          <Box>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 600, color: '#F8FAFC', '&:hover': { color: '#60A5FA' } }}
-                            >
-                              {repo.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                              {repo.owner}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Link>
+                            <span className="text-muted-foreground font-normal">{repo.owner}/</span>
+                            <span>{repo.name}</span>
+                          </Link>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-muted-foreground">
+                              <GitBranch size={11} />
+                              <span>{repo.defaultBranch}</span>
+                            </span>
+                            {repo.url && (
+                              <a
+                                href={repo.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                                title="Open on GitHub"
+                              >
+                                <ExternalLink size={11} />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </TableCell>
 
-                    {/* Status Badge */}
+                    {/* Latest Run */}
                     <TableCell>
-                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                        {latestRun ? (
-                          <StatusBadge status={latestRun.status} />
-                        ) : (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: '#64748B',
-                              fontFamily: 'var(--font-geist-mono), monospace',
-                            }}
-                          >
-                            ○ NO RUNS
-                          </Typography>
-                        )}
-                      </Link>
+                      {latestRun ? (
+                        <div className="space-y-1">
+                          <Link href={`/runs/${latestRun.id}`}>
+                            <StatusBadge status={latestRun.status} size="small" />
+                          </Link>
+                          <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                            {latestRun.workflow?.name || 'CI Workflow'}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60 font-mono">No runs yet</span>
+                      )}
                     </TableCell>
 
-                    {/* Commit & Branch */}
+                    {/* Commit SHA / Branch */}
                     <TableCell>
-                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#94A3B8' }}>
-                            <GitBranch size={12} color="#64748B" />
-                            <Typography
-                              variant="caption"
-                              sx={{ fontFamily: 'var(--font-geist-mono), monospace', fontWeight: 500 }}
-                            >
-                              {latestRun?.branch || repo.defaultBranch}
-                            </Typography>
-                          </Box>
-                          {latestRun?.commitSha && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#64748B',
-                                fontFamily: 'var(--font-geist-mono), monospace',
-                              }}
-                            >
-                              · {formatShortSha(latestRun.commitSha)}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Link>
+                      {latestRun ? (
+                        <div className="space-y-0.5">
+                          <span className="font-mono text-[11px] text-foreground bg-secondary/60 px-1.5 py-0.5 rounded border border-border/60">
+                            {formatShortSha(latestRun.commitSha)}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground font-mono truncate">
+                            {latestRun.branch}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground/40 font-mono text-xs">—</span>
+                      )}
                     </TableCell>
 
-                    {/* Duration & Relative Time */}
+                    {/* Activity & Duration */}
                     <TableCell>
-                      <Link href={`/repositories/${repo.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                        {latestRun ? (
-                          <Box>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                display: 'block',
-                                color: '#94A3B8',
-                                fontFamily: 'var(--font-geist-mono), monospace',
-                              }}
-                            >
-                              {formatDuration(latestRun.startedAt, latestRun.completedAt, latestRun.durationSeconds)}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                              {formatRelativeTime(latestRun.createdAt)}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            —
-                          </Typography>
-                        )}
-                      </Link>
+                      {latestRun ? (
+                        <div className="text-[11px] space-y-0.5">
+                          <p className="text-muted-foreground">
+                            {formatRelativeTime(latestRun.createdAt)}
+                          </p>
+                          <p className="font-mono text-[10px] text-muted-foreground/80">
+                            {formatDuration(latestRun.startedAt, latestRun.completedAt)}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40 font-mono">
+                          {formatRelativeTime(repo.createdAt)}
+                        </span>
+                      )}
                     </TableCell>
 
-                    {/* Action buttons */}
-                    <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75 }}>
+                    {/* Actions */}
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRepoForRun(repo);
-                          }}
-                          startIcon={<Play size={11} fill="currentColor" />}
-                          sx={{
-                            fontSize: '0.75rem',
-                            py: 0.25,
-                            px: 1,
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            color: '#E2E8F0',
-                          }}
+                          variant="outline"
+                          size="icon-sm"
+                          onClick={() => setSelectedRepoForRun(repo)}
+                          title="Trigger manual workflow run"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground hover:border-primary/40"
                         >
-                          Run CI
+                          <Play size={12} />
                         </Button>
-
-                        <Tooltip title="View on GitHub">
-                          <IconButton
-                            size="small"
-                            component="a"
-                            href={repo.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            sx={{ color: '#64748B', '&:hover': { color: '#94A3B8' } }}
+                        <Link href={`/repositories/${repo.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
                           >
-                            <ExternalLink size={14} />
-                          </IconButton>
-                        </Tooltip>
-
-                        <IconButton
-                          size="small"
-                          component={Link}
-                          href={`/repositories/${repo.id}`}
-                          sx={{ color: '#64748B', '&:hover': { color: '#60A5FA' } }}
-                        >
-                          <ChevronRight size={16} />
-                        </IconButton>
-                      </Box>
+                            <ChevronRight size={14} />
+                          </Button>
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
-        </TableContainer>
+        </div>
       )}
 
-      {/* Run CI Modal */}
+      {/* Manual Run CI Dialog */}
       {selectedRepoForRun && (
         <RunCIDialog
-          open={Boolean(selectedRepoForRun)}
-          onClose={() => setSelectedRepoForRun(null)}
+          open={!!selectedRepoForRun}
           repository={selectedRepoForRun}
-          workflows={selectedRepoForRun.workflows}
+          onClose={() => setSelectedRepoForRun(null)}
+          onTriggered={() => {
+            setSelectedRepoForRun(null);
+            onRefresh?.();
+          }}
         />
       )}
-    </Box>
+    </div>
   );
 }
