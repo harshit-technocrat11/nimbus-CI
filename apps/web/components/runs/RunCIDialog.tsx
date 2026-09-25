@@ -109,7 +109,6 @@ export function RunCIDialog({
             </div>
           )}
 
-          {/* Workflow selection */}
           {availableWorkflows.length > 1 && (
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Workflow</label>
@@ -127,7 +126,6 @@ export function RunCIDialog({
             </div>
           )}
 
-          {/* Branch input */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               <GitBranch size={13} />
@@ -141,7 +139,6 @@ export function RunCIDialog({
             />
           </div>
 
-          {/* Commit SHA (optional) */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               <GitCommit size={13} />

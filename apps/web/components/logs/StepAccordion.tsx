@@ -27,7 +27,7 @@ export interface StepItem {
   status: 'SUCCESS' | 'FAILED' | 'RUNNING' | 'QUEUED' | 'SKIPPED';
   durationSeconds: number;
   logs: JobLog[];
-  lineOffset: number; // Starting line number for continuous lines
+  lineOffset: number; 
 }
 
 interface StepAccordionProps {
@@ -43,15 +43,12 @@ export function StepAccordion({
   isLive = false,
   searchQuery = '',
 }: StepAccordionProps) {
-  // Set of open step IDs
   const [openSteps, setOpenSteps] = useState<Record<string, boolean>>({});
   const [copiedStepId, setCopiedStepId] = useState<string | null>(null);
 
-  // 1. Partition logs into GitHub Actions-style steps
   const steps: StepItem[] = useMemo(() => {
     const rawCommands = job.commands && job.commands.length > 0 ? job.commands : [];
 
-    // Define standard step templates
     interface StepDef {
       id: string;
       name: string;
@@ -69,7 +66,6 @@ export function StepAccordion({
       { id: 'step-complete', name: 'Complete job' },
     ];
 
-    // Buckets for logs
     const stepLogsMap: Record<string, JobLog[]> = {};
     stepDefs.forEach((s) => {
       stepLogsMap[s.id] = [];
@@ -77,11 +73,10 @@ export function StepAccordion({
 
     let currentStepId = 'step-setup';
 
-    // Parse logs and categorize into steps
     logs.forEach((log) => {
       const msg = log.message || '';
 
-      // Check for command markers (from @nimbus-ci/docker-utils: "▶️ Step: <command>")
+   
       if (msg.includes('▶️ Step:')) {
         const matchedCmd = rawCommands.find((c) => msg.includes(c));
         if (matchedCmd) {
@@ -109,8 +104,6 @@ export function StepAccordion({
       }
     });
 
-    // If no command markers were encountered but we have logs and commands,
-    // put non-setup logs into the first command step so they are visible
     const cmd0Logs = stepLogsMap['step-cmd-0'];
     if (
       rawCommands.length > 0 &&
@@ -125,7 +118,6 @@ export function StepAccordion({
       stepLogsMap['step-cmd-0'] = rest;
     }
 
-    // Determine status & duration for each step
     let runningStepEncountered = false;
     let failedStepEncountered = false;
     let cumulativeLineCount = 1;
@@ -135,7 +127,6 @@ export function StepAccordion({
       const lineOffset = cumulativeLineCount;
       cumulativeLineCount += Math.max(stepLogs.length, 1);
 
-      // Status determination
       let status: 'SUCCESS' | 'FAILED' | 'RUNNING' | 'QUEUED' | 'SKIPPED' = 'QUEUED';
 
       if (job.status === 'SUCCESS') {
@@ -333,7 +324,7 @@ export function StepAccordion({
                     : 'bg-[#0D1117] hover:bg-[#161B22]/70'
                 }`}
               >
-                {/* Left: Chevron + Status Icon + Step Name */}
+
                 <div className="flex items-center gap-2.5 min-w-0 pr-4">
                   <ChevronRight
                     size={13}
