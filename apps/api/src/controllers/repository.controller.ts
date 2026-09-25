@@ -9,7 +9,7 @@ import { logger } from "@nimbus-ci/logger";
 
 export const createRepositoryController = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const repository = await createRepository(req.body);
@@ -21,14 +21,15 @@ export const createRepositoryController = async (
     logger.error("Failed to create repository", { error });
 
     return res.status(500).json({
-      message: error instanceof Error ? error.message : "Failed to create repository",
+      message:
+        error instanceof Error ? error.message : "Failed to create repository",
     });
   }
 };
 
 export const getRepositoriesController = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const repositories = await getRepositories();
@@ -43,10 +44,7 @@ export const getRepositoriesController = async (
   }
 };
 
-export const getRepositoryController = async (
-  req: Request,
-  res: Response
-) => {
+export const getRepositoryController = async (req: Request, res: Response) => {
   try {
     const id = getParam(req.params.id);
     if (!id) {

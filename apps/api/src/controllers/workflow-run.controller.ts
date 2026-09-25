@@ -12,11 +12,12 @@ import {
 import { getParam } from "../utils/params.js";
 import { logger } from "@nimbus-ci/logger";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const createWorkflowRunController = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const workflowId = getParam(req.params.workflowId);
@@ -32,10 +33,7 @@ export const createWorkflowRunController = async (
   } catch (error) {
     logger.error("Failed to create workflow run", { error });
 
-    if (
-      error instanceof Error &&
-      error.message === "Workflow not found"
-    ) {
+    if (error instanceof Error && error.message === "Workflow not found") {
       return res.status(404).json({
         message: error.message,
       });
@@ -49,7 +47,7 @@ export const createWorkflowRunController = async (
 
 export const getAllWorkflowRunsController = async (
   _req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const runs = await getAllPipelines();
@@ -62,10 +60,7 @@ export const getAllWorkflowRunsController = async (
   }
 };
 
-export const getWorkflowRunController = async (
-  req: Request,
-  res: Response
-) => {
+export const getWorkflowRunController = async (req: Request, res: Response) => {
   try {
     const id = getParam(req.params.id);
     if (!id) {
@@ -96,7 +91,7 @@ export const getWorkflowRunController = async (
 
 export const getWorkflowRunsController = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const workflowId = getParam(req.params.workflowId);
@@ -120,10 +115,7 @@ export const getWorkflowRunsController = async (
   }
 };
 
-export const getJobsController = async (
-  req: Request,
-  res: Response
-) => {
+export const getJobsController = async (req: Request, res: Response) => {
   try {
     const runId = getParam(req.params.runId);
     if (!runId) {
@@ -146,10 +138,7 @@ export const getJobsController = async (
   }
 };
 
-export const getJobLogsController = async (
-  req: Request,
-  res: Response
-) => {
+export const getJobLogsController = async (req: Request, res: Response) => {
   try {
     const jobId = getParam(req.params.jobId);
     if (!jobId) {

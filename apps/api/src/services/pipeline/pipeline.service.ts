@@ -1,4 +1,8 @@
-import { prisma, type WorkflowRunStatus, type TriggerType } from "@nimbus-ci/db";
+import {
+  prisma,
+  type WorkflowRunStatus,
+  type TriggerType,
+} from "@nimbus-ci/db";
 
 export interface CreatePipelineInput {
   workflowId: string;
@@ -76,7 +80,7 @@ export const updatePipelineStatus = async (
     startedAt?: Date;
     completedAt?: Date;
     errorMessage?: string | null;
-  }
+  },
 ) => {
   return prisma.workflowRun.update({
     where: { id },
@@ -84,7 +88,9 @@ export const updatePipelineStatus = async (
       status,
       ...(options?.startedAt && { startedAt: options.startedAt }),
       ...(options?.completedAt && { completedAt: options.completedAt }),
-      ...(options?.errorMessage !== undefined && { errorMessage: options.errorMessage }),
+      ...(options?.errorMessage !== undefined && {
+        errorMessage: options.errorMessage,
+      }),
     },
   });
 };

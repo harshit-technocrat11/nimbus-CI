@@ -15,32 +15,17 @@ const router: Router = Router();
 router.post(
   "/workflows/:workflowId/runs",
   validateBody(createWorkflowRunSchema),
-  createWorkflowRunController
+  createWorkflowRunController,
 );
 
-router.get(
-  "/workflows/:workflowId/runs",
-  getWorkflowRunsController
-);
+router.get("/workflows/:workflowId/runs", getWorkflowRunsController);
 
-router.get(
-  "/runs",
-  getAllWorkflowRunsController
-);
+router.get("/runs", getAllWorkflowRunsController);
 
-router.get(
-  "/runs/:id",
-  getWorkflowRunController
-);
+router.get("/runs/:id", getWorkflowRunController);
 
-router.get(
-  "/runs/:runId/jobs",
-  getJobsController
-);
+router.get("/runs/:runId/jobs", getJobsController);
 
-router.get(
-  "/jobs/:jobId/logs",
-  getJobLogsController
-);
+router.get("/jobs/:jobId/logs", getJobLogsController);
 
 export default router;

@@ -43,12 +43,49 @@ enum RunnerStatus {
   DRAINING
 }
 
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  githubUserId   String   @unique
+  githubUsername String
+  avatarUrl      String?
+  email          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions     Session[]
+  repositories Repository[]
+
+  @@index([githubUsername])
+  @@index([githubUserId])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @db.Uuid
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
 // ─────────────────────────────────────────────
 // REPOSITORY
 // ─────────────────────────────────────────────
 
 model Repository {
-  id String @id @default(uuid()) @db.Uuid
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String? @db.Uuid
 
   name          String
   owner         String
@@ -59,9 +96,11 @@ model Repository {
   updatedAt DateTime @updatedAt
 
   // Relations
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workflows Workflow[]
 
   @@index([owner])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────

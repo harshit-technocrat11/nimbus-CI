@@ -12,7 +12,7 @@ const router: Router = Router();
 router.post(
   "/",
   validateBody(createRepositorySchema),
-  createRepositoryController
+  createRepositoryController,
 );
 
 router.get("/", getRepositoriesController);
