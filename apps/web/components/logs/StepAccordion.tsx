@@ -103,18 +103,19 @@ export function StepAccordion({
         currentStepId = 'step-complete';
       }
 
-      if (stepLogsMap[currentStepId]) {
-        stepLogsMap[currentStepId].push(log);
-      } else {
-        stepLogsMap['step-setup'].push(log);
+      const targetBucket = stepLogsMap[currentStepId] ?? stepLogsMap['step-setup'];
+      if (targetBucket) {
+        targetBucket.push(log);
       }
     });
 
     // If no command markers were encountered but we have logs and commands,
     // put non-setup logs into the first command step so they are visible
+    const cmd0Logs = stepLogsMap['step-cmd-0'];
     if (
       rawCommands.length > 0 &&
-      stepLogsMap['step-cmd-0'].length === 0 &&
+      cmd0Logs &&
+      cmd0Logs.length === 0 &&
       logs.length > 0
     ) {
       const allLogs = [...logs];
@@ -182,9 +183,11 @@ export function StepAccordion({
 
       // Duration approximation from logs timestamps
       let duration = 0;
-      if (stepLogs.length >= 2) {
-        const t1 = new Date(stepLogs[0].createdAt).getTime();
-        const t2 = new Date(stepLogs[stepLogs.length - 1].createdAt).getTime();
+      const firstLog = stepLogs[0];
+      const lastLog = stepLogs[stepLogs.length - 1];
+      if (stepLogs.length >= 2 && firstLog && lastLog) {
+        const t1 = new Date(firstLog.createdAt).getTime();
+        const t2 = new Date(lastLog.createdAt).getTime();
         duration = Math.max(0, Math.round((t2 - t1) / 1000));
       } else if (status === 'SUCCESS') {
         duration = idx === 1 ? 1 : idx === stepDefs.length - 1 ? 0 : 3;

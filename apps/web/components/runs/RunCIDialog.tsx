@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input';
 
 interface RunCIDialogProps {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   repository?: Repository | null;
   workflows?: Workflow[];
   onTriggered?: (runId?: string) => void;
@@ -28,6 +29,7 @@ interface RunCIDialogProps {
 export function RunCIDialog({
   open,
   onClose,
+  onOpenChange,
   repository,
   workflows = [],
   onTriggered,
@@ -70,7 +72,7 @@ export function RunCIDialog({
 
       onTriggered?.(run.id);
       onRunTriggered?.(run.id);
-      onClose();
+      onClose?.();
       router.push(`/runs/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to trigger workflow');
@@ -79,7 +81,13 @@ export function RunCIDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        onOpenChange?.(isOpen);
+        if (!isOpen) onClose?.();
+      }}
+    >
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
