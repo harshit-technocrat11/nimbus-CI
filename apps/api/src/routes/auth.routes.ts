@@ -46,7 +46,12 @@ router.get("/auth/github/callback", async (req, res) => {
       }),
     });
 
-    const tokenData = await tokenRes.json();
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string;
+      token_type?: string;
+      scope?: string;
+      error?: string;
+    };
 
     if (!tokenData.access_token) {
       logger.error("Failed to obtain GitHub access token", { tokenData });
@@ -66,7 +71,12 @@ router.get("/auth/github/callback", async (req, res) => {
       return res.redirect(`${env.FRONTEND_URL}?error=github_user_fetch_failed`);
     }
 
-    const ghUser = await userRes.json();
+    const ghUser = (await userRes.json()) as {
+      id: number;
+      login: string;
+      avatar_url?: string | null;
+      email?: string | null;
+    };
 
     // find or create user in DB
     const user = await prisma.user.upsert({
