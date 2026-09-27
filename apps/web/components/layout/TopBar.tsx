@@ -86,21 +86,20 @@ export function TopBar({ onToggleSidebar, onOpenConnectModal }: TopBarProps) {
 
       {/* Right controls */}
       <div className="flex items-center gap-2.5">
-        <Link href="/connect/github">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-7 text-xs bg-[#21262D] border-[#30363D] hover:bg-[#30363D] text-[#F0F6FC] font-medium"
-          >
-            <GitFork size={13} className="text-[#58A6FF]" />
-            <span className="hidden sm:inline">Connect Repository</span>
-            <span className="sm:hidden">Connect</span>
-          </Button>
-        </Link>
+        <Button
+          onClick={onOpenConnectModal}
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-7 text-xs bg-[#21262D] border-[#30363D] hover:bg-[#30363D] text-[#F0F6FC] font-medium"
+        >
+          <GitFork size={13} className="text-[#58A6FF]" />
+          <span className="hidden sm:inline">Connect Repository</span>
+          <span className="sm:hidden">Connect</span>
+        </Button>
 
         {!loading && (
           user ? (
-            <div className="flex items-center gap-2 pl-2 border-l border-[#30363D]">
+            <div className="flex items-center gap-2.5 pl-2.5 border-l border-[#30363D]">
               <div className="flex items-center gap-2">
                 {user.avatarUrl ? (
                   <img
@@ -113,18 +112,19 @@ export function TopBar({ onToggleSidebar, onOpenConnectModal }: TopBarProps) {
                     <UserIcon size={12} />
                   </div>
                 )}
-                <span className="text-xs font-medium text-[#C9D1D9] hidden md:inline">
+                <span className="text-xs font-semibold text-[#C9D1D9] hidden md:inline">
                   {user.githubUsername}
                 </span>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleLogout}
-                title="Sign out"
-                className="p-1 rounded text-[#8B949E] hover:text-[#F85149] hover:bg-[#21262D] transition-colors"
-                aria-label="Sign out"
+                className="gap-1 h-7 px-2 text-xs text-[#8B949E] hover:text-[#F85149] hover:bg-[#21262D]"
               >
-                <LogOut size={14} />
-              </button>
+                <LogOut size={13} />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
             </div>
           ) : (
             <a href={api.getLoginUrl()}>

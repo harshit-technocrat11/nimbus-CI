@@ -14,7 +14,8 @@ router.get("/auth/github", (req, res) => {
     });
   }
 
-  const callbackUrl = `${env.API_URL}/api/auth/github/callback`;
+  const baseApiUrl = env.API_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
+  const callbackUrl = `${baseApiUrl}/api/auth/github/callback`;
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(
     env.GITHUB_CLIENT_ID
   )}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=read:user,user:email`;

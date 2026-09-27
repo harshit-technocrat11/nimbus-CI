@@ -36,15 +36,15 @@ export default function GitHubConnectPage() {
 
   const handleInstall = () => {
     setIsRedirecting(true);
-    // When the GitHub App is created, this redirects to GitHub App installation URL
-    window.location.href =
-      process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL ||
-      'https://github.com/apps/nimbus-ci/installations/new';
+    if (process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL) {
+      window.location.href = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
+    } else {
+      window.location.href = '/repositories';
+    }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 py-4">
-      {/* Back Link */}
       <Link
         href="/repositories"
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"

@@ -3,16 +3,7 @@
 import React, { useState } from 'react';
 import { TopBar } from './TopBar';
 import { Sidebar } from './Sidebar';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { GitBranch, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { ConnectGitHubDialog } from '@/components/repositories/ConnectGitHubDialog';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -57,52 +48,14 @@ export function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Connect GitHub Dialog */}
-      <Dialog open={connectModalOpen} onOpenChange={setConnectModalOpen}>
-        <DialogContent className="sm:max-w-[460px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GitBranch className="text-primary" size={18} />
-              Connect GitHub Repositories
-            </DialogTitle>
-            <DialogDescription>
-              Nimbus CI securely integrates through a GitHub App to execute workflows on push and pull requests.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-3 text-xs text-muted-foreground">
-            <div className="flex items-start gap-2.5 p-2.5 rounded-md bg-secondary/40 border border-border">
-              <ShieldCheck className="text-emerald-400 shrink-0 mt-0.5" size={16} />
-              <div>
-                <p className="font-medium text-foreground">Granular Permissions</p>
-                <p className="mt-0.5 text-[11px]">
-                  Only granted read access to workflows and write access to commit statuses on chosen repositories.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConnectModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                // When user sets up GitHub App, this will trigger the install URL
-                setConnectModalOpen(false);
-              }}
-              className="gap-1.5"
-            >
-              <span>Install GitHub App</span>
-              <ArrowUpRight size={14} />
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConnectGitHubDialog
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        onConnected={() => {
+          setConnectModalOpen(false);
+          window.location.href = '/repositories';
+        }}
+      />
     </div>
   );
 }
