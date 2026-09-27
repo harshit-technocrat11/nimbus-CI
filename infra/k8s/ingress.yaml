@@ -2,10 +2,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nimbus-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - nimbus-backend-harshit.duckdns.org
+      secretName: nimbus-tls
   rules:
-    - http:
+    - host: nimbus-backend-harshit.duckdns.org
+      http:
         paths:
           - path: /health
             pathType: Prefix
