@@ -7,6 +7,13 @@ spec:
   rules:
     - http:
         paths:
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: nimbus-api
+                port:
+                  number: 8000
           - path: /api
             pathType: Prefix
             backend:
