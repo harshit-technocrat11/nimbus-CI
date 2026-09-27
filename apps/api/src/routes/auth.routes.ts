@@ -106,11 +106,13 @@ router.get("/auth/github/callback", async (req, res) => {
       expiresIn: "7d",
     });
 
-    // set secure httpOnly cookie
+    const isSecure = env.NODE_ENV === "production" || env.API_URL.startsWith("https://");
+
+  
     res.cookie(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isSecure,
+      sameSite: isSecure ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/",
     });
@@ -125,17 +127,18 @@ router.get("/auth/github/callback", async (req, res) => {
   }
 });
 
-//  Get current authenticated user profile
+
 router.get("/auth/me", requireAuth, (req, res) => {
   return res.json({ user: req.user });
 });
 
-// 4. Logout
+//  Logout
 router.post("/auth/logout", (req, res) => {
+  const isSecure = env.NODE_ENV === "production" || env.API_URL.startsWith("https://");
   res.clearCookie(SESSION_COOKIE_NAME, {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isSecure,
+    sameSite: isSecure ? "none" : "lax",
     path: "/",
   });
 

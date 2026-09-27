@@ -271,14 +271,55 @@ class LocalStateStore {
 
 const localStore = new LocalStateStore();
 
+export interface AuthUser {
+  id: string;
+  githubUsername: string;
+  avatarUrl?: string | null;
+  email?: string | null;
+}
+
 /**
  * Robust API Client with automatic graceful fallback to local state store
  */
 export const api = {
+  // Auth
+  getLoginUrl(): string {
+    return `${API_BASE_URL}/auth/github`;
+  },
+
+  async getCurrentUser(): Promise<AuthUser | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.user || null;
+    } catch {
+      return null;
+    }
+  },
+
+  async logout(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
   // Repositories
   async getRepositories(): Promise<Repository[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/repositories`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/repositories`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       const data = await res.json();
       return Array.isArray(data) && data.length > 0 ? data : localStore.getRepositories();
@@ -289,7 +330,10 @@ export const api = {
 
   async getRepository(id: string): Promise<Repository | null> {
     try {
-      const res = await fetch(`${API_BASE_URL}/repositories/${id}`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/repositories/${id}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -302,6 +346,7 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/repositories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input),
       });
       if (!res.ok) throw new Error('API request failed');
@@ -316,6 +361,7 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/repositories/${repositoryId}/workflows`, {
         cache: 'no-store',
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
@@ -326,7 +372,10 @@ export const api = {
 
   async getWorkflow(id: string): Promise<Workflow | null> {
     try {
-      const res = await fetch(`${API_BASE_URL}/workflows/${id}`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/workflows/${id}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -339,6 +388,7 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/repositories/${repositoryId}/workflows`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input),
       });
       if (!res.ok) throw new Error('API request failed');
@@ -351,7 +401,10 @@ export const api = {
   // Workflow Runs
   async getAllRuns(): Promise<WorkflowRun[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/runs`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/runs`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       const data = await res.json();
       return Array.isArray(data) && data.length > 0 ? data : localStore.getAllRuns();
@@ -362,7 +415,10 @@ export const api = {
 
   async getWorkflowRuns(workflowId: string): Promise<WorkflowRun[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/workflows/${workflowId}/runs`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/workflows/${workflowId}/runs`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -372,7 +428,10 @@ export const api = {
 
   async getWorkflowRun(id: string): Promise<WorkflowRun | null> {
     try {
-      const res = await fetch(`${API_BASE_URL}/runs/${id}`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/runs/${id}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -388,6 +447,7 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/workflows/${workflowId}/runs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(input || {}),
       });
       if (!res.ok) throw new Error('API request failed');
@@ -400,7 +460,10 @@ export const api = {
   // Jobs & Logs
   async getJobs(runId: string): Promise<Job[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/runs/${runId}/jobs`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/runs/${runId}/jobs`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -410,7 +473,10 @@ export const api = {
 
   async getJobLogs(jobId: string): Promise<JobLog[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/logs`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/logs`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
@@ -421,7 +487,10 @@ export const api = {
   // Runners
   async getRunners(): Promise<Runner[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/runners`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/runners`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('API request failed');
       return await res.json();
     } catch {
