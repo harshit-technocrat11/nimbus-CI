@@ -83,25 +83,33 @@ router.post("/github/repos/connect", requireAuth, async (req, res) => {
   }
 
   const accessToken = req.user?.githubAccessToken;
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({
+      message: "Authenticated user information is unavailable. Please sign in again.",
+      needsReauth: true,
+    });
+  }
+
   const repoOwner = owner || req.user?.githubUsername || "unknown";
   const branch = defaultBranch || "main";
 
   try {
-    // Create or update repository in DB linked to this user
     const repo = await prisma.repository.upsert({
       where: { url },
       update: {
         name,
         owner: repoOwner,
         defaultBranch: branch,
-        userId: req.user?.id,
+        userId,
       },
       create: {
         name,
         owner: repoOwner,
         url,
         defaultBranch: branch,
-        userId: req.user?.id,
+        userId,
       },
     });
 
