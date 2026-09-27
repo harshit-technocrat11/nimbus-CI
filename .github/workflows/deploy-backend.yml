@@ -16,6 +16,7 @@ on:
       - 'package.json'
       - '.npmrc'
       - 'pnpm-workspace.yaml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
@@ -80,7 +81,7 @@ jobs:
             command -v g++ >/dev/null 2>&1 || { echo "❌ g++ is required"; exit 1; }
             command -v make >/dev/null 2>&1 || { echo "❌ make is required"; exit 1; }
 
-            pnpm install --frozen-lockfile --ignore-scripts=false
+            pnpm install
             pnpm --filter @nimbus-ci/db run db:generate
             pnpm --filter @nimbus-ci/db run db:push
 
