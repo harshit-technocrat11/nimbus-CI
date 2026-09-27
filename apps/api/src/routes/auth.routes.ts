@@ -18,7 +18,7 @@ router.get("/auth/github", (req, res) => {
   const callbackUrl = `${baseApiUrl}/api/auth/github/callback`;
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(
     env.GITHUB_CLIENT_ID
-  )}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=read:user,user:email`;
+  )}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=read:user,user:email,repo,admin:repo_hook`;
 
   res.redirect(githubAuthUrl);
 });
@@ -101,6 +101,7 @@ router.get("/auth/github/callback", async (req, res) => {
       githubUsername: user.githubUsername,
       avatarUrl: user.avatarUrl,
       email: user.email,
+      githubAccessToken: tokenData.access_token,
     };
 
     const token = jwt.sign(jwtPayload, env.JWT_SECRET, {

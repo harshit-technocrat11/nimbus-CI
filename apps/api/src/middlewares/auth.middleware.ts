@@ -9,6 +9,7 @@ export interface AuthUser {
   githubUsername: string;
   avatarUrl?: string | null;
   email?: string | null;
+  githubAccessToken?: string;
 }
 
 declare global {
@@ -19,7 +20,6 @@ declare global {
   }
 }
 
-// verifies JWT, rejects with 401 if missing or invalid
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token =
     req.cookies?.[SESSION_COOKIE_NAME] ||

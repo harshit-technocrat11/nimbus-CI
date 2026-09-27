@@ -51,15 +51,12 @@ export default function LandingPage() {
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 space-y-16">
-      {/* Hero Section */}
       <div className="text-center space-y-6 pt-4">
-        {/* Status Pill */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#1f6feb]/10 text-[#58A6FF] border border-[#1f6feb]/30">
           <CloudLightning size={13} className="text-[#58A6FF]" />
           <span>Self-Hosted CI/CD Platform</span>
         </div>
 
-        {/* Main Title */}
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-[#F0F6FC]">
           Self-Hosted CI Pipelines <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-[#58A6FF] via-[#79c0ff] to-[#bc8cff] bg-clip-text text-transparent">
@@ -67,13 +64,11 @@ export default function LandingPage() {
           </span>
         </h1>
 
-        {/* Subtitle */}
         <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#8B949E] leading-relaxed">
           Define your <code className="text-[#58A6FF] bg-[#161B22] px-1.5 py-0.5 rounded border border-[#30363D] font-mono text-sm font-semibold">nimbus-ci.yml</code> in
           your repo and run it. Connect with GitHub, trigger automated builds on every push, and stream container logs live.
         </p>
 
-        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           {!loading && user ? (
             <Link href="/repositories">
@@ -125,9 +120,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* 3 Simple Steps */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Step 1 */}
         <div className="p-6 rounded-lg bg-[#161B22] border border-[#30363D] space-y-3">
           <div className="w-8 h-8 rounded-full bg-[#1f6feb]/20 text-[#58A6FF] font-mono text-sm font-bold flex items-center justify-center border border-[#1f6feb]/30">
             1
@@ -138,7 +131,6 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Step 2 */}
         <div className="p-6 rounded-lg bg-[#161B22] border border-[#30363D] space-y-3">
           <div className="w-8 h-8 rounded-full bg-[#bc8cff]/20 text-[#bc8cff] font-mono text-sm font-bold flex items-center justify-center border border-[#bc8cff]/30">
             2
@@ -149,7 +141,6 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Step 3 */}
         <div className="p-6 rounded-lg bg-[#161B22] border border-[#30363D] space-y-3">
           <div className="w-8 h-8 rounded-full bg-[#3fb950]/20 text-[#3fb950] font-mono text-sm font-bold flex items-center justify-center border border-[#3fb950]/30">
             3
@@ -161,7 +152,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Code Preview Section */}
       <div className="rounded-lg bg-[#161B22] border border-[#30363D] overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 bg-[#0D1117] border-b border-[#30363D]">
           <div className="flex items-center gap-2">

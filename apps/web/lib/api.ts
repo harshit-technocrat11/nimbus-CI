@@ -278,11 +278,21 @@ export interface AuthUser {
   email?: string | null;
 }
 
-/**
- * Robust API Client with automatic graceful fallback to local state store
- */
+export interface GitHubRepoItem {
+  id: number;
+  name: string;
+  fullName: string;
+  owner: string;
+  defaultBranch: string;
+  private: boolean;
+  htmlUrl: string;
+  cloneUrl: string;
+  description?: string | null;
+  updatedAt: string;
+  isConnected?: boolean;
+}
+
 export const api = {
-  // Auth
   getLoginUrl(): string {
     return `${API_BASE_URL}/auth/github`;
   },
@@ -311,6 +321,41 @@ export const api = {
     } catch {
       return false;
     }
+  },
+
+  async getGitHubRepos(): Promise<{ repositories: GitHubRepoItem[]; needsReauth?: boolean }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/github/repos`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        return { repositories: [], needsReauth: true };
+      }
+      if (!res.ok) throw new Error('Failed to fetch GitHub repositories');
+      return await res.json();
+    } catch {
+      return { repositories: [] };
+    }
+  },
+
+  async connectGitHubRepo(input: {
+    name: string;
+    owner: string;
+    defaultBranch: string;
+    url: string;
+  }): Promise<Repository> {
+    const res = await fetch(`${API_BASE_URL}/github/repos/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to connect repository');
+    }
+    return await res.json();
   },
 
   // Repositories

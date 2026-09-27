@@ -56,6 +56,7 @@ app.get(["/health", "/api/health"], (_req, res) => {
 });
 
 app.use(githubRoutes);
+app.use("/api", githubRoutes);
 
 app.use(errorHandler);
 

@@ -54,7 +54,6 @@ export function TopBar({ onToggleSidebar, onOpenConnectModal }: TopBarProps) {
 
   return (
     <header className="h-[52px] border-b border-[#30363D] bg-[#161B22] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6">
-      {/* Brand & Left controls */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
           <button
@@ -84,7 +83,7 @@ export function TopBar({ onToggleSidebar, onOpenConnectModal }: TopBarProps) {
         </Link>
       </div>
 
-      {/* Right controls */}
+      
       <div className="flex items-center gap-2.5">
         <Button
           onClick={onOpenConnectModal}

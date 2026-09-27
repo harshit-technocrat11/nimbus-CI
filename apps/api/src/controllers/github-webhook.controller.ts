@@ -39,10 +39,15 @@ export const githubWebhookController = async (
     console.log(`   Commit SHA: ${commitSha}`);
     console.log("=======================================================");
 
-    // Find the repository registered in Nimbus
-    const dbRepository = await prisma.repository.findUnique({
+    // Find the repository registered in Nimbus (resilient to .git suffix and html vs clone URLs)
+    const dbRepository = await prisma.repository.findFirst({
       where: {
-        url: repository.clone_url,
+        OR: [
+          { url: repository.clone_url },
+          { url: repository.html_url },
+          { url: repository.clone_url?.replace(/\.git$/, "") },
+          { url: `${repository.html_url}.git` },
+        ],
       },
       include: {
         workflows: true,
