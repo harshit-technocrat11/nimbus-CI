@@ -1,4 +1,4 @@
-name: Deploy Backend to AWS EC2
+name: Production CI/CD - Deploy Backend to AWS EC2
 
 on:
   push:
@@ -23,43 +23,86 @@ concurrency:
   group: production-deployment
   cancel-in-progress: false
 
-
 permissions:
   contents: read
+  packages: write
 
 jobs:
-  deploy:
-    name: Deploy Backend Infrastructure to EC2
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
 
+  build-and-push:
+    # push to Github container registry 
+    name: Build & Push Microservices to GHCR 
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, worker, streamer, metrics]
     steps:
-      - name: Checkout repository Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase repository owner for image tags
+        id: repo_owner
+        run: echo "OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.OWNER }}/nimbus-ci-${{ matrix.service }}:latest
+            ghcr.io/${{ steps.repo_owner.outputs.OWNER }}/nimbus-ci-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+#  Deploy to EC2 , and pull from GHCR
+  deploy-ec2:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPO: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER || 'ubuntu' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          envs: GITHUB_TOKEN,GITHUB_REPO
+          envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPO,GITHUB_SHA
           script: |
             set -e
-            echo "🚀 [1/5] Setting up environment paths..."
+            echo "🚀 [1/5] Setting up environment paths & permissions..."
             export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.local/share/pnpm:$PATH"
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            sudo chmod 644 /etc/rancher/k3s/k3s.yaml 2>/dev/null || true
 
-            echo "📥 [2/5] Syncing latest code on EC2..."
+            REPO_OWNER=$(echo "$GITHUB_ACTOR" | tr '[:upper:]' '[:lower:]')
+
+            echo "📥 [2/5] Syncing latest code and database schema on EC2..."
             mkdir -p $HOME/nimbus_ci
             cd $HOME/nimbus_ci
 
             if [ ! -d ".git" ]; then
-              echo "Initializing git repository in existing folder..."
               git init
             fi
 
@@ -67,45 +110,42 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "📦 [3/5] Installing dependencies & syncing database..."
-            if ! command -v python3 >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
-              echo "🛠️ Installing native build prerequisites (python3, python3-dev, make, g++, build-essential)..."
-              sudo apt-get update -qq
-              sudo apt-get install -y -qq python3 python3-dev make g++ build-essential
-            fi
-
-            export PYTHON="$(command -v python3)"
-            export npm_config_python="$PYTHON"
-
-            command -v python3 >/dev/null 2>&1 || { echo "❌ python3 is required"; exit 1; }
-            command -v g++ >/dev/null 2>&1 || { echo "❌ g++ is required"; exit 1; }
-            command -v make >/dev/null 2>&1 || { echo "❌ make is required"; exit 1; }
-
             pnpm install
             pnpm --filter @nimbus-ci/db run db:generate
             pnpm --filter @nimbus-ci/db run db:push
 
-            echo "🔄 [4/5] Building & deploying microservices..."
-            if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
-              echo "🔨 Building Docker images and importing into K3s containerd..."
+            echo "🧹 [3/5] Cleaning up any old evicted/failed pods..."
+            sudo kubectl get pods -A 2>/dev/null | grep -E "Evicted|Error|ContainerStatusUnknown" | awk '{print $2 " -n " $1}' | xargs -r -n3 sudo kubectl delete pod 2>/dev/null || true
+
+            echo "🔄 [4/5] Deploying pre-built images from GHCR..."
+            if command -v kubectl >/dev/null 2>&1 && sudo kubectl cluster-info >/dev/null 2>&1; then
+              echo "Pulling images directly into K3s containerd..."
+              echo "$GITHUB_TOKEN" | sudo k3s ctr images login ghcr.io -u "$GITHUB_ACTOR" --password-stdin 2>/dev/null || true
+
               for svc in api worker streamer metrics; do
-                echo "📦 Processing nimbus-$svc..."
-                docker build -t nimbus-ci-$svc:latest -f infra/docker/Dockerfile.$svc .
-                docker save nimbus-ci-$svc:latest | sudo k3s ctr -n k8s.io images import -
+                IMAGE_TAG="ghcr.io/${REPO_OWNER}/nimbus-ci-${svc}:latest"
+                echo "Pulling $IMAGE_TAG..."
+                sudo k3s ctr -n k8s.io images pull "$IMAGE_TAG" || true
               done
 
-              echo "🚀 Applying Kubernetes manifests..."
-              kubectl apply -f infra/k8s/
-              kubectl rollout restart deployment nimbus-api nimbus-worker nimbus-streamer nimbus-metrics || true
+              echo "Applying Kubernetes manifests with GHCR images..."
+              sed -i "s|image: nimbus-ci-\([a-z]*\):latest|image: ghcr.io/${REPO_OWNER}/nimbus-ci-\1:latest|g" infra/k8s/*.yaml
+              sudo kubectl apply -f infra/k8s/
+              sudo kubectl rollout restart deployment nimbus-api nimbus-worker nimbus-streamer nimbus-metrics || true
             elif command -v docker >/dev/null 2>&1; then
-              echo "Rebuilding and starting Docker Compose services..."
-              docker compose -f infra/docker-compose.yaml up -d --build --remove-orphans
-              docker image prune -f || true
+              echo "Updating Docker Compose with GHCR images..."
+              echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+              sed -i "s|image: .*nimbus-ci-\([a-z]*\).*|image: ghcr.io/${REPO_OWNER}/nimbus-ci-\1:latest|g" infra/docker-compose.yaml
+              docker compose -f infra/docker-compose.yaml pull
+              docker compose -f infra/docker-compose.yaml up -d --remove-orphans
             fi
 
-            echo "✅ [5/5] Deployment completed successfully!"
-            if command -v kubectl >/dev/null 2>&1 && kubectl cluster-info >/dev/null 2>&1; then
-              kubectl get pods -o wide
+            echo "🧹 Reclaiming disk space on EC2..."
+            sudo docker image prune -af --filter "until=24h" 2>/dev/null || true
+
+            echo "✅ [5/5] Deployment complete! Cluster status:"
+            if command -v kubectl >/dev/null 2>&1 && sudo kubectl cluster-info >/dev/null 2>&1; then
+              sudo kubectl get pods -o wide
             else
               docker ps
             fi
