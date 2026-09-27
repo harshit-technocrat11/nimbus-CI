@@ -27,7 +27,9 @@ spec:
             - name: PORT
               value: "8000"
             - name: REDIS_HOST
-              value: "host.docker.internal"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             - name: REDIS_PORT
               value: "6379"
             - name: DATABASE_URL

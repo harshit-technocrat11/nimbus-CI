@@ -30,7 +30,9 @@ spec:
 
           env:
             - name: REDIS_HOST
-              value: "host.docker.internal"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
 
             - name: REDIS_PORT
               value: "6379"
