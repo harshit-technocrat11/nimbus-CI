@@ -22,6 +22,8 @@ router.get("/github/repos", requireAuth, async (req, res) => {
   }
 
   try {
+    logger.info("[GitHub Repos] Requesting repositories for user", { user: req.user?.githubUsername });
+
     const ghRes = await fetch("https://api.github.com/user/repos?per_page=100&sort=updated&type=all", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -31,11 +33,12 @@ router.get("/github/repos", requireAuth, async (req, res) => {
     });
 
     if (!ghRes.ok) {
-      logger.error("Failed to fetch user repositories from GitHub", { status: ghRes.status });
+      logger.error("[GitHub Repos] Failed to fetch user repositories from GitHub", { status: ghRes.status });
       return res.status(ghRes.status).json({ message: "Failed to fetch repositories from GitHub" });
     }
 
     const repos = (await ghRes.json()) as any[];
+    logger.info("[GitHub Repos] Successfully fetched user repositories", { count: repos.length });
 
     // Check which repositories are already connected in Nimbus DB
     const urls = repos.flatMap((r) => [r.clone_url, r.html_url]).filter(Boolean);
@@ -69,7 +72,7 @@ router.get("/github/repos", requireAuth, async (req, res) => {
 
     return res.json({ repositories: formattedRepos });
   } catch (error) {
-    logger.error("Error fetching GitHub repositories", { error });
+    logger.error("[GitHub Repos] Error fetching GitHub repositories", { error });
     return res.status(500).json({ message: "Internal server error fetching repositories" });
   }
 });
@@ -95,6 +98,12 @@ router.post("/github/repos/connect", requireAuth, async (req, res) => {
   const repoOwner = owner || req.user?.githubUsername || "unknown";
   const branch = defaultBranch || "main";
 
+  logger.info("[GitHub Connect] Connecting repository", {
+    repo: `${repoOwner}/${name}`,
+    userId,
+    url,
+  });
+
   try {
     const repo = await prisma.repository.upsert({
       where: { url },
@@ -113,10 +122,14 @@ router.post("/github/repos/connect", requireAuth, async (req, res) => {
       },
     });
 
+    logger.info("[GitHub Connect] Repository saved in database", { repoId: repo.id });
+
     // Automatically register push webhook with GitHub API if access token is available
     if (accessToken) {
       const baseApiUrl = env.API_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
       const webhookUrl = `${baseApiUrl}/api/webhooks/github`;
+
+      logger.info("[GitHub Connect] Registering GitHub push webhook", { webhookUrl });
 
       try {
         const hookRes = await fetch(`https://api.github.com/repos/${repoOwner}/${name}/hooks`, {
@@ -140,21 +153,24 @@ router.post("/github/repos/connect", requireAuth, async (req, res) => {
         });
 
         if (hookRes.status === 201) {
-          logger.info(`GitHub push webhook created successfully for ${repoOwner}/${name}`);
+          logger.info(`[GitHub Connect] Push webhook created successfully for ${repoOwner}/${name}`);
         } else if (hookRes.status === 422) {
-          logger.info(`GitHub webhook already exists on ${repoOwner}/${name}`);
+          logger.info(`[GitHub Connect] Push webhook already exists on ${repoOwner}/${name}`);
         } else {
           const errData = await hookRes.text();
-          logger.warn(`Could not create GitHub webhook on ${repoOwner}/${name}`, { status: hookRes.status, errData });
+          logger.warn(`[GitHub Connect] Could not create GitHub webhook on ${repoOwner}/${name}`, {
+            status: hookRes.status,
+            errData,
+          });
         }
       } catch (hookErr) {
-        logger.warn("Failed to call GitHub webhook API", { hookErr });
+        logger.warn("[GitHub Connect] Failed to call GitHub webhook API", { hookErr });
       }
     }
 
     return res.status(201).json(repo);
   } catch (error) {
-    logger.error("Error connecting repository", { error });
+    logger.error("[GitHub Connect] Error connecting repository", { error });
     return res.status(500).json({
       message: error instanceof Error ? error.message : "Failed to connect repository",
     });

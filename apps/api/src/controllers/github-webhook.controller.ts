@@ -33,11 +33,11 @@ export const githubWebhookController = async (
       });
     }
 
-    console.log("\n=======================================================");
-    console.log(`🔔 [Webhook] Push event received: ${repository.full_name}`);
-    console.log(`   Branch: ${branch}`);
-    console.log(`   Commit SHA: ${commitSha}`);
-    console.log("=======================================================");
+    logger.info("[Webhook] GitHub push event received", {
+      repo: repository.full_name,
+      branch,
+      commitSha: commitSha.substring(0, 7),
+    });
 
     // Find the repository registered in Nimbus (resilient to .git suffix and html vs clone URLs)
     const dbRepository = await prisma.repository.findFirst({
@@ -55,7 +55,7 @@ export const githubWebhookController = async (
     });
 
     if (!dbRepository) {
-      console.warn(`⚠️  [Webhook] Repository not registered in Nimbus: ${repository.clone_url}`);
+      logger.warn("[Webhook] Repository not registered in Nimbus DB", { url: repository.clone_url });
       return res.status(404).json({
         received: false,
         error: "Repository not registered in Nimbus",
@@ -65,7 +65,7 @@ export const githubWebhookController = async (
     // Get existing workflow or create default
     let workflow = dbRepository.workflows[0];
     if (!workflow) {
-      console.log(`ℹ️  [Webhook] Creating default workflow record for repository`);
+      logger.info("[Webhook] Creating default workflow record for repository", { repoId: dbRepository.id });
       workflow = await prisma.workflow.create({
         data: {
           repositoryId: dbRepository.id,
@@ -82,14 +82,18 @@ export const githubWebhookController = async (
       dbRepository.owner;
     const repoName = repository.name || dbRepository.name;
 
-    // 1. Fetch workflow definition from GitHub at exact commit SHA
-    console.log(`🔍 [Webhook] Fetching workflow file from GitHub at commit ${commitSha.substring(0, 7)}...`);
+   
+    logger.info("[Webhook] Fetching workflow file from GitHub repository", {
+      owner,
+      repo: repoName,
+      commitSha: commitSha.substring(0, 7),
+    });
     const fetched = await fetchWorkflowFromGitHub(owner, repoName, commitSha);
 
     let runPipelineId: string;
 
     if (fetched) {
-      console.log(`🚀 [Webhook] Running newly fetched workflow: ${fetched.path}`);
+      logger.info("[Webhook] Running newly fetched workflow file", { path: fetched.path });
 
       const result = await workflowService.runWorkflow({
         workflowContent: fetched.content,
@@ -109,13 +113,11 @@ export const githubWebhookController = async (
             ...(result.parsedWorkflow.name ? { name: result.parsedWorkflow.name } : {}),
           },
         })
-        .catch((err) => logger.warn("Failed to update workflow snapshot in DB", { err }));
+        .catch((err) => logger.warn("[Webhook] Failed to update workflow snapshot in DB", { err }));
 
       runPipelineId = result.pipeline.id;
     } else {
-      console.warn(
-        `⚠️  [Webhook] No workflow file found in repo at commit ${commitSha}. Falling back to DB definition.`
-      );
+      logger.warn("[Webhook] No workflow file found at commit, falling back to DB definition", { commitSha });
 
       const result = await workflowService.runWorkflowById(workflow.id, {
         branch,
@@ -125,14 +127,17 @@ export const githubWebhookController = async (
       runPipelineId = result.pipeline.id;
     }
 
-    console.log(`✅ [Webhook] Pipeline created successfully: ${runPipelineId}\n`);
+    logger.info("[Webhook] Pipeline run created and dispatched successfully", { runId: runPipelineId });
 
     return res.status(202).json({
       received: true,
       runId: runPipelineId,
     });
   } catch (error: any) {
-    console.error("❌ [Webhook] Error processing webhook:", error.message || error);
+    logger.error("[Webhook] Error processing GitHub webhook", {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    });
     next(error);
   }
 };

@@ -9,6 +9,7 @@ const router: Router = Router();
 
 router.get("/auth/github", (req, res) => {
   if (!env.GITHUB_CLIENT_ID) {
+    logger.error("GITHUB_CLIENT_ID is not configured in server environment");
     return res.status(500).json({
       message: "GITHUB_CLIENT_ID is not configured in server environment",
     });
@@ -20,6 +21,7 @@ router.get("/auth/github", (req, res) => {
     env.GITHUB_CLIENT_ID
   )}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=read:user,user:email,repo,admin:repo_hook`;
 
+  logger.info("[OAuth] Initiating GitHub OAuth flow", { callbackUrl });
   res.redirect(githubAuthUrl);
 });
 
@@ -28,12 +30,13 @@ router.get("/auth/github/callback", async (req, res) => {
   const code = req.query.code as string | undefined;
 
   if (!code) {
-    logger.error("GitHub OAuth callback missing code query parameter");
+    logger.error("[OAuth] Callback missing code query parameter");
     return res.redirect(`${env.FRONTEND_URL}?error=missing_code`);
   }
 
+  logger.info("[OAuth] Callback received with code, exchanging for access token");
+
   try {
-    // exchange temporary code for github access token
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
       headers: {
@@ -55,11 +58,12 @@ router.get("/auth/github/callback", async (req, res) => {
     };
 
     if (!tokenData.access_token) {
-      logger.error("Failed to obtain GitHub access token", { tokenData });
+      logger.error("[OAuth] Failed to obtain GitHub access token", { tokenData });
       return res.redirect(`${env.FRONTEND_URL}?error=oauth_token_failed`);
     }
 
-    // fetch user details from github
+    logger.info("[OAuth] Access token obtained, fetching user profile from GitHub");
+
     const userRes = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
@@ -68,7 +72,7 @@ router.get("/auth/github/callback", async (req, res) => {
     });
 
     if (!userRes.ok) {
-      logger.error("Failed to fetch GitHub user details", { status: userRes.status });
+      logger.error("[OAuth] Failed to fetch GitHub user details", { status: userRes.status });
       return res.redirect(`${env.FRONTEND_URL}?error=github_user_fetch_failed`);
     }
 
@@ -79,7 +83,11 @@ router.get("/auth/github/callback", async (req, res) => {
       email?: string | null;
     };
 
-    // find or create user in DB
+    logger.info("[OAuth] Profile retrieved, upserting user in DB", {
+      githubUserId: ghUser.id,
+      githubUsername: ghUser.login,
+    });
+
     const user = await prisma.user.upsert({
       where: { githubUserId: String(ghUser.id) },
       update: {
@@ -95,7 +103,8 @@ router.get("/auth/github/callback", async (req, res) => {
       },
     });
 
-    // 7day expiry
+    logger.info("[OAuth] User record ready in DB", { userId: user.id });
+
     const jwtPayload = {
       id: user.id,
       githubUsername: user.githubUsername,
@@ -110,22 +119,25 @@ router.get("/auth/github/callback", async (req, res) => {
 
     const isSecure = env.NODE_ENV === "production" || env.API_URL.startsWith("https://");
 
-  
     res.cookie(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 
-    logger.info(`User logged in via GitHub: ${user.githubUsername} (${user.id})`);
+    logger.info("[OAuth] Login successful, redirecting to repositories", {
+      user: user.githubUsername,
+      secure: isSecure,
+    });
 
-    // Redirect to frontend repositories dashboard
     return res.redirect(`${env.FRONTEND_URL}/repositories`);
   } catch (error) {
-    logger.error("GitHub OAuth callback error", { error });
-    return res.redirect(`${env.FRONTEND_URL}?error=internal_auth_error`);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    logger.error("[OAuth] Callback exception caught", { error: errorMsg, stack });
+    return res.redirect(`${env.FRONTEND_URL}?error=${encodeURIComponent(errorMsg)}`);
   }
 });
 
